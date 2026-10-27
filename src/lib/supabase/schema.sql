@@ -1,125 +1,212 @@
 -- ====================================================================
--- HAPPIWRAPZ SUPABASE POSTGRES SCHEMA
--- Zero Online Payments - Order Request & Owner Confirmation Model
+-- HAPPIWRAPZ SUPABASE POSTGRES FULL PRODUCTION SCHEMA
+-- Artisanal Satin Ribbon Flower Atelier
+-- Zero Online Payments — WhatsApp Confirmation Model
 -- Brand Palette: #2A2A2A (Charcoal), #C0C0C0 (Moonlit Silver), #E10600 (Signal Red)
+-- Note: Product images are stored as path arrays (e.g. '["/images/products/..."]'), NOT binary blobs.
 -- ====================================================================
 
 -- 1. Enable UUID Extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Staff Roles Enum
-CREATE TYPE user_role AS ENUM ('owner', 'manager', 'fulfillment', 'customer');
-
--- 3. Order Status Enum
-CREATE TYPE order_status AS ENUM (
-  'pending',
-  'confirmed',
-  'preparing',
-  'ready',
-  'delivered',
-  'cancelled'
-);
-
--- 4. Profiles Table (Extends auth.users)
-CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
-  phone TEXT,
-  role user_role DEFAULT 'customer' NOT NULL,
-  avatar_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
-);
-
--- 5. Products Catalog Table
+-- 2. Products Catalog Table
 CREATE TABLE IF NOT EXISTS public.products (
   id TEXT PRIMARY KEY,
-  slug TEXT NOT NULL UNIQUE,
+  slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   category TEXT NOT NULL,
   description TEXT NOT NULL,
   price INTEGER NOT NULL, -- in INR (e.g. 1499)
-  images JSONB NOT NULL DEFAULT '[]'::jsonb,
-  in_stock BOOLEAN DEFAULT TRUE NOT NULL,
-  featured BOOLEAN DEFAULT FALSE NOT NULL,
+  images JSONB NOT NULL DEFAULT '[]'::jsonb, -- Array of image paths (e.g. ["/images/products/rose-bouquet-1.jpg"])
+  in_stock BOOLEAN NOT NULL DEFAULT TRUE,
+  featured BOOLEAN NOT NULL DEFAULT FALSE,
   options JSONB NOT NULL DEFAULT '[]'::jsonb,
+  stock_quantity INTEGER NOT NULL DEFAULT 50,
+  low_stock_threshold INTEGER NOT NULL DEFAULT 10,
+  sku TEXT,
+  care_instructions TEXT,
+  lead_time_days INTEGER DEFAULT 1,
+  metadata JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- 6. Order Requests Table (NO PAYMENT DETAILS)
-CREATE TABLE IF NOT EXISTS public.order_requests (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  reference TEXT NOT NULL UNIQUE, -- e.g. 'HW-A3K7P9'
-  status order_status DEFAULT 'pending' NOT NULL,
-  customer_info JSONB NOT NULL, -- { name, email, phone, address, city, pincode }
-  items JSONB NOT NULL, -- [ { product, quantity, giftMessage, selectedOptions } ]
-  delivery_date DATE,
+-- 3. Order Requests Table (NO ONLINE PAYMENT DETAILS)
+CREATE TABLE IF NOT EXISTS public.orders (
+  id TEXT PRIMARY KEY,
+  reference TEXT UNIQUE NOT NULL, -- e.g. 'HW-A3K7P9'
+  status TEXT NOT NULL DEFAULT 'pending',
+  items JSONB NOT NULL DEFAULT '[]'::jsonb,
+  customer JSONB NOT NULL DEFAULT '{}'::jsonb,
+  delivery_date TEXT,
   delivery_slot TEXT,
   notes TEXT,
+  subtotal INTEGER NOT NULL DEFAULT 0,
+  discount_amount INTEGER NOT NULL DEFAULT 0,
+  total_amount INTEGER NOT NULL DEFAULT 0,
+  payment_method TEXT DEFAULT 'Zero Online Payment — WhatsApp Confirmed',
+  payment_status TEXT DEFAULT 'confirmed_whatsapp',
+  status_history JSONB DEFAULT '[]'::jsonb,
+  internal_notes JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- 7. Immutable Order Audit Log Table
-CREATE TABLE IF NOT EXISTS public.order_audit_logs (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  order_id UUID REFERENCES public.order_requests(id) ON DELETE CASCADE,
-  from_status TEXT NOT NULL,
-  to_status TEXT NOT NULL,
-  actor_name TEXT NOT NULL,
-  actor_role TEXT NOT NULL,
-  note TEXT,
-  timestamp TIMESTAMPTZ DEFAULT NOW() NOT NULL
+-- 4. Custom Bespoke Order Inquiries Table
+CREATE TABLE IF NOT EXISTS public.custom_orders (
+  id TEXT PRIMARY KEY,
+  reference TEXT UNIQUE NOT NULL, -- e.g. 'HW-CUS-789'
+  status TEXT NOT NULL DEFAULT 'inquiry',
+  occasion TEXT NOT NULL,
+  budget_range TEXT NOT NULL,
+  color_palette TEXT NOT NULL,
+  preferred_flowers JSONB DEFAULT '[]'::jsonb,
+  reference_images JSONB DEFAULT '[]'::jsonb,
+  special_instructions TEXT,
+  required_date TEXT,
+  delivery_city TEXT,
+  customer JSONB NOT NULL DEFAULT '{}'::jsonb,
+  quotation JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- 8. Customer Saved Addresses Table
-CREATE TABLE IF NOT EXISTS public.customer_addresses (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  label TEXT NOT NULL,
-  recipient_name TEXT NOT NULL,
-  phone TEXT NOT NULL,
-  address_line TEXT NOT NULL,
-  city TEXT DEFAULT 'Bangalore' NOT NULL,
-  pincode TEXT NOT NULL,
-  is_default BOOLEAN DEFAULT FALSE,
+-- 5. Quotations Table
+CREATE TABLE IF NOT EXISTS public.quotations (
+  id TEXT PRIMARY KEY,
+  custom_order_id TEXT NOT NULL,
+  custom_order_reference TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  breakdown JSONB DEFAULT '[]'::jsonb,
+  notes TEXT,
+  valid_until TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- 9. Row Level Security (RLS) Policies
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+-- 6. Inventory Movements Audit Table
+CREATE TABLE IF NOT EXISTS public.inventory_movements (
+  id TEXT PRIMARY KEY,
+  product_id TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  type TEXT NOT NULL, -- 'sale', 'restock', 'adjustment', 'damage'
+  quantity INTEGER NOT NULL,
+  previous_stock INTEGER NOT NULL,
+  new_stock INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  reference_id TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- 7. Coupons & Discounts Table
+CREATE TABLE IF NOT EXISTS public.coupons (
+  id TEXT PRIMARY KEY,
+  code TEXT UNIQUE NOT NULL,
+  discount_type TEXT NOT NULL, -- 'percentage' | 'fixed'
+  discount_value INTEGER NOT NULL,
+  min_order_amount INTEGER NOT NULL DEFAULT 0,
+  max_discount_amount INTEGER,
+  start_date TEXT,
+  end_date TEXT,
+  usage_limit INTEGER,
+  used_count INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- 8. Admin Notifications Table
+CREATE TABLE IF NOT EXISTS public.admin_notifications (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  link TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb
+);
+
+-- 9. Website Dynamic Settings Table
+CREATE TABLE IF NOT EXISTS public.website_settings (
+  id TEXT PRIMARY KEY,
+  announcement_bar JSONB NOT NULL DEFAULT '{}'::jsonb,
+  business_info JSONB NOT NULL DEFAULT '{}'::jsonb,
+  hero_slides JSONB NOT NULL DEFAULT '[]'::jsonb,
+  featured_categories JSONB NOT NULL DEFAULT '[]'::jsonb,
+  whatsapp_settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+  maintenance_mode BOOLEAN DEFAULT FALSE,
+  currency TEXT DEFAULT 'INR',
+  delivery_slots JSONB DEFAULT '[]'::jsonb,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- 10. Users Table
+CREATE TABLE IF NOT EXISTS public.users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT,
+  role TEXT NOT NULL DEFAULT 'customer',
+  phone TEXT,
+  avatar TEXT,
+  addresses JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- 11. Immutable Order Audit Log Table
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id TEXT PRIMARY KEY,
+  order_id TEXT,
+  reference TEXT,
+  action TEXT NOT NULL,
+  from_status TEXT,
+  to_status TEXT,
+  actor_name TEXT NOT NULL,
+  actor_role TEXT NOT NULL,
+  note TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  timestamp TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- 12. Contact Messages Table
+CREATE TABLE IF NOT EXISTS public.contact_messages (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  subject TEXT,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  status TEXT NOT NULL DEFAULT 'unread'
+);
+
+-- 13. Newsletter Subscribers Table
+CREATE TABLE IF NOT EXISTS public.subscribers (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  subscribed_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- ── Indexes for high-speed queries ───────────────────────────────────────────
+CREATE INDEX IF NOT EXISTS idx_products_category ON public.products(category);
+CREATE INDEX IF NOT EXISTS idx_products_slug ON public.products(slug);
+CREATE INDEX IF NOT EXISTS idx_orders_reference ON public.orders(reference);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders(status);
+CREATE INDEX IF NOT EXISTS idx_custom_orders_reference ON public.custom_orders(reference);
+CREATE INDEX IF NOT EXISTS idx_coupons_code ON public.coupons(code);
+CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
+
+-- ── Row Level Security (RLS) Policies ────────────────────────────────────────
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.order_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.order_audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.customer_addresses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.custom_orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.website_settings ENABLE ROW LEVEL SECURITY;
 
--- Public can read active in-stock products
-CREATE POLICY "Public can view in-stock products" ON public.products
-  FOR SELECT USING (in_stock = true);
-
--- Staff can view and manage all products
-CREATE POLICY "Staff manage products" ON public.products
-  FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'manager')));
-
--- Public / Guests can insert order requests
-CREATE POLICY "Anyone can submit order request" ON public.order_requests
-  FOR INSERT WITH CHECK (true);
-
--- Anyone with reference can view their own order request
-CREATE POLICY "Read order by reference" ON public.order_requests
-  FOR SELECT USING (true);
-
--- Only Staff can update order status
-CREATE POLICY "Staff update order status" ON public.order_requests
-  FOR UPDATE TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'manager', 'fulfillment')));
-
--- Audit logs append-only
-CREATE POLICY "Staff insert audit log" ON public.order_audit_logs
-  FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Staff read audit log" ON public.order_audit_logs
-  FOR SELECT TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'manager')));
+CREATE POLICY "Allow public read products" ON public.products FOR SELECT USING (true);
+CREATE POLICY "Allow public read website settings" ON public.website_settings FOR SELECT USING (true);
+CREATE POLICY "Allow public submit orders" ON public.orders FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public read orders by reference" ON public.orders FOR SELECT USING (true);
+CREATE POLICY "Allow public submit custom orders" ON public.custom_orders FOR INSERT WITH CHECK (true);

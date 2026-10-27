@@ -17,6 +17,25 @@ import {
   WebsiteSettings,
 } from "@/lib/store/types";
 import { OrderStatus, generateOrderReference } from "@/lib/utils";
+import { isPostgresConfigured } from "./postgres";
+import {
+  ensurePostgresReady,
+  pgGetProducts,
+  pgSaveProduct,
+  pgDeleteProduct,
+  pgGetOrders,
+  pgSaveOrder,
+  pgGetCustomOrders,
+  pgSaveCustomOrder,
+  pgGetCoupons,
+  pgSaveCoupon,
+  pgGetWebsiteSettings,
+  pgSaveWebsiteSettings,
+  pgGetUsers,
+  pgSaveUser,
+  pgSaveContact,
+  pgSaveSubscriber,
+} from "./postgresAdapter";
 
 export interface AuditLogEntry {
   id: string;
@@ -527,8 +546,17 @@ function loadDatabase(): DatabaseSchema {
         inMemoryDb.inventoryMovements = inMemoryDb.inventoryMovements || [...INITIAL_INVENTORY_MOVEMENTS];
         inMemoryDb.coupons = inMemoryDb.coupons || [...INITIAL_COUPONS];
         inMemoryDb.websiteSettings = inMemoryDb.websiteSettings || { ...INITIAL_WEBSITE_SETTINGS };
-        inMemoryDb.users = inMemoryDb.users && inMemoryDb.users.length ? inMemoryDb.users : [...DEMO_ACCOUNTS];
         inMemoryDb.auditLogs = inMemoryDb.auditLogs || [];
+        if (isPostgresConfigured) {
+          ensurePostgresReady({
+            products: inMemoryDb.products,
+            coupons: inMemoryDb.coupons,
+            websiteSettings: inMemoryDb.websiteSettings,
+            users: inMemoryDb.users,
+            orders: inMemoryDb.orders,
+            customOrders: inMemoryDb.customOrders,
+          }).catch((err) => console.warn("[Postgres] Database initialization warning:", err));
+        }
         return inMemoryDb;
       }
     }
@@ -566,6 +594,16 @@ function loadDatabase(): DatabaseSchema {
   };
 
   saveDatabase(inMemoryDb);
+  if (isPostgresConfigured) {
+    ensurePostgresReady({
+      products: inMemoryDb.products,
+      coupons: inMemoryDb.coupons,
+      websiteSettings: inMemoryDb.websiteSettings,
+      users: inMemoryDb.users,
+      orders: inMemoryDb.orders,
+      customOrders: inMemoryDb.customOrders,
+    }).catch((err) => console.warn("[Postgres] Database initialization warning:", err));
+  }
   return inMemoryDb;
 }
 
@@ -588,6 +626,42 @@ export async function getProducts(filters?: {
   inStock?: boolean;
   featured?: boolean;
 }): Promise<Product[]> {
+  if (isPostgresConfigured) {
+    try {
+      const pgList = await pgGetProducts();
+      if (pgList && pgList.length > 0) {
+        let list = pgList.filter((p) => !p.archived);
+
+        if (filters?.category && filters.category !== "all") {
+          const cat = filters.category.toLowerCase();
+          list = list.filter((p) => p.category.toLowerCase() === cat);
+        }
+
+        if (filters?.inStock !== undefined) {
+          list = list.filter((p) => p.inStock === filters.inStock);
+        }
+
+        if (filters?.featured !== undefined) {
+          list = list.filter((p) => p.featured === filters.featured);
+        }
+
+        if (filters?.search) {
+          const q = filters.search.toLowerCase().trim();
+          list = list.filter(
+            (p) =>
+              p.name.toLowerCase().includes(q) ||
+              p.description.toLowerCase().includes(q) ||
+              p.category.toLowerCase().includes(q)
+          );
+        }
+
+        return list;
+      }
+    } catch (err) {
+      console.warn("[Postgres] getProducts fallback:", err);
+    }
+  }
+
   const db = loadDatabase();
   let list = db.products.filter((p) => !p.archived);
 
@@ -618,6 +692,20 @@ export async function getProducts(filters?: {
 }
 
 export async function getProductById(idOrSlug: string): Promise<Product | null> {
+  if (isPostgresConfigured) {
+    try {
+      const pgList = await pgGetProducts();
+      if (pgList && pgList.length > 0) {
+        const found = pgList.find(
+          (p) => (p.id === idOrSlug || p.slug === idOrSlug) && !p.archived
+        );
+        if (found) return found;
+      }
+    } catch (err) {
+      console.warn("[Postgres] getProductById fallback:", err);
+    }
+  }
+
   const db = loadDatabase();
   const found = db.products.find(
     (p) => (p.id === idOrSlug || p.slug === idOrSlug) && !p.archived
@@ -673,6 +761,9 @@ export async function createProduct(
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveProduct(newProduct).catch((e) => console.warn("[Postgres] save product error:", e));
+  }
   return newProduct;
 }
 
@@ -715,6 +806,9 @@ export async function updateProduct(
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveProduct(updated).catch((e) => console.warn("[Postgres] update product error:", e));
+  }
   return updated;
 }
 
@@ -735,6 +829,9 @@ export async function deleteProduct(id: string): Promise<boolean> {
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgDeleteProduct(id).catch((e) => console.warn("[Postgres] delete product error:", e));
+  }
   return true;
 }
 
@@ -747,8 +844,22 @@ export async function getOrders(filters?: {
   startDate?: string;
   endDate?: string;
 }): Promise<OrderRequest[]> {
-  const db = loadDatabase();
-  let list = db.orders;
+  let list: OrderRequest[] = [];
+  if (isPostgresConfigured) {
+    try {
+      const pgOrders = await pgGetOrders();
+      if (pgOrders && pgOrders.length > 0) {
+        list = pgOrders;
+      }
+    } catch (e) {
+      console.warn("[Postgres] getOrders fallback:", e);
+    }
+  }
+
+  if (!list.length) {
+    const db = loadDatabase();
+    list = db.orders;
+  }
 
   if (filters?.status && filters.status !== "all") {
     list = list.filter((o) => o.status === filters.status);
@@ -784,8 +895,22 @@ export async function getOrders(filters?: {
 }
 
 export async function getOrderByReference(reference: string): Promise<OrderRequest | null> {
-  const db = loadDatabase();
   const cleanRef = reference.trim().toUpperCase();
+  if (isPostgresConfigured) {
+    try {
+      const pgOrders = await pgGetOrders();
+      if (pgOrders && pgOrders.length > 0) {
+        const found = pgOrders.find(
+          (o) => o.reference.toUpperCase() === cleanRef || o.id === reference
+        );
+        if (found) return found;
+      }
+    } catch (e) {
+      console.warn("[Postgres] getOrderByReference fallback:", e);
+    }
+  }
+
+  const db = loadDatabase();
   const found = db.orders.find(
     (o) => o.reference.toUpperCase() === cleanRef || o.id === reference
   );
@@ -891,6 +1016,9 @@ export async function createOrder(data: {
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveOrder(newOrder).catch((e) => console.warn("[Postgres] pgSaveOrder error:", e));
+  }
   return newOrder;
 }
 
@@ -946,6 +1074,9 @@ export async function updateOrderStatus(
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveOrder(order).catch((e) => console.warn("[Postgres] pgSaveOrder error:", e));
+  }
   return order;
 }
 
@@ -974,6 +1105,9 @@ export async function addOrderInternalNote(
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveOrder(order).catch((e) => console.warn("[Postgres] pgSaveOrder error:", e));
+  }
   return order;
 }
 
@@ -983,8 +1117,22 @@ export async function getCustomOrders(filters?: {
   status?: string;
   search?: string;
 }): Promise<CustomOrderRequest[]> {
-  const db = loadDatabase();
-  let list = db.customOrders;
+  let list: CustomOrderRequest[] = [];
+  if (isPostgresConfigured) {
+    try {
+      const pgCustom = await pgGetCustomOrders();
+      if (pgCustom && pgCustom.length > 0) {
+        list = pgCustom;
+      }
+    } catch (e) {
+      console.warn("[Postgres] getCustomOrders fallback:", e);
+    }
+  }
+
+  if (!list.length) {
+    const db = loadDatabase();
+    list = db.customOrders;
+  }
 
   if (filters?.status && filters.status !== "all") {
     list = list.filter((c) => c.status === filters.status);
@@ -1006,8 +1154,22 @@ export async function getCustomOrders(filters?: {
 }
 
 export async function getCustomOrderById(idOrRef: string): Promise<CustomOrderRequest | null> {
-  const db = loadDatabase();
   const clean = idOrRef.trim().toUpperCase();
+  if (isPostgresConfigured) {
+    try {
+      const pgCustom = await pgGetCustomOrders();
+      if (pgCustom && pgCustom.length > 0) {
+        const found = pgCustom.find(
+          (c) => c.id === idOrRef || c.reference.toUpperCase() === clean
+        );
+        if (found) return found;
+      }
+    } catch (e) {
+      console.warn("[Postgres] getCustomOrderById fallback:", e);
+    }
+  }
+
+  const db = loadDatabase();
   const found = db.customOrders.find(
     (c) => c.id === idOrRef || c.reference.toUpperCase() === clean
   );
@@ -1065,6 +1227,9 @@ export async function createCustomOrder(data: {
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveCustomOrder(newCustom).catch((e) => console.warn("[Postgres] save custom order error:", e));
+  }
   return newCustom;
 }
 
@@ -1100,6 +1265,9 @@ export async function updateCustomOrderStatus(
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveCustomOrder(custom).catch((e) => console.warn("[Postgres] update custom order error:", e));
+  }
   return custom;
 }
 
@@ -1142,6 +1310,9 @@ export async function saveQuotation(
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveCustomOrder(custom).catch((e) => console.warn("[Postgres] save quotation error:", e));
+  }
   return quotation;
 }
 
@@ -1345,6 +1516,21 @@ export async function getInventoryMovements(productId?: string): Promise<Invento
 // ── Discounts and Coupons API (Phase 10) ────────────────────────────────────
 
 export async function getCoupons(activeOnly: boolean = false): Promise<Coupon[]> {
+  if (isPostgresConfigured) {
+    try {
+      const pgCoups = await pgGetCoupons();
+      if (pgCoups && pgCoups.length > 0) {
+        if (activeOnly) {
+          const now = new Date().toISOString();
+          return pgCoups.filter((c: any) => c.active && (!c.validUntil || c.validUntil >= now));
+        }
+        return pgCoups;
+      }
+    } catch (e) {
+      console.warn("[Postgres] getCoupons fallback:", e);
+    }
+  }
+
   const db = loadDatabase();
   if (activeOnly) {
     const now = new Date().toISOString();
@@ -1382,6 +1568,9 @@ export async function createCoupon(data: Omit<Coupon, "id" | "usedCount" | "crea
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveCoupon(newCoupon).catch((e) => console.warn("[Postgres] save coupon error:", e));
+  }
   return newCoupon;
 }
 
@@ -1392,6 +1581,9 @@ export async function updateCoupon(id: string, updates: Partial<Coupon>): Promis
 
   db.coupons[idx] = { ...db.coupons[idx], ...updates, id };
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveCoupon(db.coupons[idx]).catch((e) => console.warn("[Postgres] update coupon error:", e));
+  }
   return db.coupons[idx];
 }
 
@@ -1510,6 +1702,15 @@ export async function markAllNotificationsAsRead(): Promise<boolean> {
 // ── Website Content Customization (Phase 11) ────────────────────────────────
 
 export async function getWebsiteSettings(): Promise<WebsiteSettings> {
+  if (isPostgresConfigured) {
+    try {
+      const pgSettings = await pgGetWebsiteSettings();
+      if (pgSettings) return pgSettings;
+    } catch (e) {
+      console.warn("[Postgres] getWebsiteSettings fallback:", e);
+    }
+  }
+
   const db = loadDatabase();
   return db.websiteSettings;
 }
@@ -1534,6 +1735,9 @@ export async function updateWebsiteSettings(
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveWebsiteSettings(db.websiteSettings).catch((e) => console.warn("[Postgres] save website settings error:", e));
+  }
   return db.websiteSettings;
 }
 
@@ -1768,6 +1972,9 @@ export async function createContactMessage(data: {
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveContact(newMsg).catch((e) => console.warn("[Postgres] save contact error:", e));
+  }
   return newMsg;
 }
 
@@ -1787,14 +1994,19 @@ export async function addSubscriber(email: string): Promise<{ success: boolean; 
     return { success: true, message: "You are already subscribed to the Happiwrapz floral circle!" };
   }
 
-  db.subscribers.push({
+  const newSub = {
     id: `sub-${Date.now()}`,
     email: cleanEmail,
     subscribedAt: new Date().toISOString(),
     active: true,
-  });
+  };
+
+  db.subscribers.push(newSub);
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveSubscriber(newSub).catch((e) => console.warn("[Postgres] save subscriber error:", e));
+  }
   return { success: true, message: "Welcome to the Happiwrapz floral circle!" };
 }
 
@@ -1806,13 +2018,34 @@ export async function getSubscribers(): Promise<Subscriber[]> {
 // ── Users / Auth API ─────────────────────────────────────────────────────────
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const db = loadDatabase();
   const clean = email.trim().toLowerCase();
+  if (isPostgresConfigured) {
+    try {
+      const pgUsers = await pgGetUsers();
+      if (pgUsers && pgUsers.length > 0) {
+        const found = pgUsers.find((u) => u.email.toLowerCase() === clean);
+        if (found) return found;
+      }
+    } catch (e) {
+      console.warn("[Postgres] getUserByEmail fallback:", e);
+    }
+  }
+
+  const db = loadDatabase();
   const found = db.users.find((u) => u.email.toLowerCase() === clean);
   return found || null;
 }
 
 export async function getUsers(): Promise<User[]> {
+  if (isPostgresConfigured) {
+    try {
+      const pgUsers = await pgGetUsers();
+      if (pgUsers && pgUsers.length > 0) return pgUsers;
+    } catch (e) {
+      console.warn("[Postgres] getUsers fallback:", e);
+    }
+  }
+
   const db = loadDatabase();
   return db.users;
 }
@@ -1831,6 +2064,9 @@ export async function updateUserRole(userId: string, newRole: User["role"]): Pro
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveUser(user).catch((e) => console.warn("[Postgres] update user error:", e));
+  }
   return user;
 }
 
@@ -1857,6 +2093,9 @@ export async function createUser(data: {
 
   db.users.push(newUser);
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveUser(newUser).catch((e) => console.warn("[Postgres] save user error:", e));
+  }
   return newUser;
 }
 

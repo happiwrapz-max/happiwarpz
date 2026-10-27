@@ -84,7 +84,10 @@ interface DatabaseSchema {
   subscribers: Subscriber[];
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const BUNDLE_DB_FILE = path.join(process.cwd(), ".data", "db.json");
+const DATA_DIR = process.env.VERCEL
+  ? path.join("/tmp", ".data")
+  : path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 
 // ── Initial Seed Data ────────────────────────────────────────────────────────
@@ -523,12 +526,22 @@ function loadDatabase(): DatabaseSchema {
   }
 
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+    } catch {
+      // Ignore directory creation failure on read-only environments
     }
 
-    if (fs.existsSync(DB_FILE)) {
-      const raw = fs.readFileSync(DB_FILE, "utf-8");
+    const targetFile = fs.existsSync(DB_FILE)
+      ? DB_FILE
+      : fs.existsSync(BUNDLE_DB_FILE)
+      ? BUNDLE_DB_FILE
+      : null;
+
+    if (targetFile) {
+      const raw = fs.readFileSync(targetFile, "utf-8");
       inMemoryDb = JSON.parse(raw);
       if (inMemoryDb && inMemoryDb.products && inMemoryDb.orders) {
         // Ensure new array keys exist if migrating from old schema

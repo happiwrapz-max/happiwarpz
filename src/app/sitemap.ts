@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { CATALOG } from "@/lib/data/catalog";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://happiwrapz.in";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://happiwrapz.in";
   const now = new Date();
 
   // Static core routes

@@ -1,0 +1,750 @@
+{
+  "products": [
+    {
+      "id": "red-rose-bouquet",
+      "slug": "red-rose-bouquet",
+      "name": "Handcrafted Ribbon Rose Bouquet",
+      "category": "Flower Bouquet",
+      "description": "A timeless expression of love that lasts forever. Artisanal satin ribbon roses folded meticulously by hand, wrapped in luxury European paper with a double-faced satin ribbon bow.",
+      "price": 1499,
+      "images": [
+        "/images/products/rose-bouquet-1.jpg",
+        "/images/products/rose-bouquet-2.jpg",
+        "/images/products/rose-bouquet-3.jpg",
+        "/images/products/rose-bouquet-4.jpg"
+      ],
+      "inStock": true,
+      "featured": true,
+      "options": []
+    },
+    {
+      "id": "ribbon-sunflower-bouquet",
+      "slug": "ribbon-sunflower-bouquet",
+      "name": "Golden Ribbon Sunflower Bouquet",
+      "category": "Flower Bouquet",
+      "description": "Radiant handmade satin ribbon sunflowers with layered artisan petals. Never wilts or fades — bringing eternal warmth, happiness, and sunshine into any room.",
+      "price": 1599,
+      "images": [
+        "/images/products/rose-bouquet-2.jpg",
+        "/images/products/rose-bouquet-3.jpg",
+        "/images/products/rose-bouquet-1.jpg",
+        "/images/products/rose-bouquet-4.jpg"
+      ],
+      "inStock": true,
+      "featured": true,
+      "options": []
+    },
+    {
+      "id": "sun-rose-ribbon-duet",
+      "slug": "sun-rose-ribbon-duet",
+      "name": "Sun & Rose Ribbon Bouquet — Signature Duet",
+      "category": "Flower Bouquet",
+      "description": "Our signature handmade gift bouquet combining cheerful golden ribbon sunflowers with passionate crimson ribbon roses. Elegantly wrapped with handwritten calligraphy tag.",
+      "price": 1799,
+      "images": [
+        "/images/products/rose-bouquet-3.jpg",
+        "/images/products/rose-bouquet-1.jpg",
+        "/images/products/rose-bouquet-2.jpg",
+        "/images/products/rose-bouquet-4.jpg"
+      ],
+      "inStock": true,
+      "featured": true,
+      "options": []
+    },
+    {
+      "id": "glitter-rose-luxury",
+      "slug": "glitter-rose-luxury",
+      "name": "Glitter Ribbon Rose Bouquet — Luxury Keepsake",
+      "category": "Flower Bouquet",
+      "description": "Handcrafted satin ribbon roses accented with subtle diamond sparkle in matte black wrap with gold trim. Each petal is individually heat-shaped for a permanent keepsake.",
+      "price": 1899,
+      "images": [
+        "/images/products/glitter-rose-1.jpg",
+        "/images/products/glitter-rose-2.jpg",
+        "/images/products/glitter-rose-3.jpg",
+        "/images/products/glitter-rose-4.jpg"
+      ],
+      "inStock": true,
+      "featured": true,
+      "options": []
+    },
+    {
+      "id": "midnight-rose-box",
+      "slug": "midnight-rose-box",
+      "name": "Midnight Black Ribbon Rose Box",
+      "category": "Gift Box",
+      "description": "An exquisite velvet-finish box housing handcrafted black and gold satin ribbon roses. An everlasting, dramatic gift statement that requires zero watering.",
+      "price": 2499,
+      "images": [
+        "/images/products/midnight-box-1.jpg",
+        "/images/products/midnight-box-2.jpg",
+        "/images/products/midnight-box-3.jpg",
+        "/images/products/midnight-box-4.jpg"
+      ],
+      "inStock": true,
+      "featured": true,
+      "options": []
+    },
+    {
+      "id": "eternal-crimson-hamper",
+      "slug": "eternal-crimson-hamper",
+      "name": "Eternal Ribbon Flower Luxury Hamper",
+      "category": "Gift Hamper",
+      "description": "A curated luxury gift hamper combining handmade satin ribbon roses & sunflowers, artisan chocolates, scented soy candle, and a personalized keepsake card in a rigid gift trunk.",
+      "price": 3499,
+      "images": [
+        "/images/products/hamper-1.jpg",
+        "/images/products/hamper-2.jpg",
+        "/images/products/hamper-3.jpg",
+        "/images/products/hamper-4.jpg"
+      ],
+      "inStock": true,
+      "featured": false,
+      "options": []
+    },
+    {
+      "id": "custom-gift-wrap",
+      "slug": "custom-gift-wrap",
+      "name": "Custom Gift Wrapping",
+      "category": "Gift Wrap",
+      "description": "Bespoke gift wrapping service with satin ribbon flowers, luxury textured papers, double-faced ribbons, and personalized wax-sealed tags.",
+      "price": 299,
+      "images": [
+        "/images/products/gift-wrap-1.jpg",
+        "/images/products/gift-wrap-2.jpg",
+        "/images/products/gift-wrap-3.jpg",
+        "/images/products/gift-wrap-4.jpg"
+      ],
+      "inStock": true,
+      "featured": false,
+      "options": []
+    },
+    {
+      "id": "red-rose-box",
+      "slug": "red-rose-box",
+      "name": "Velvet Ribbon Rose Box",
+      "category": "Flower Boxes",
+      "description": "Handcrafted velvet cylinder box housing 25 meticulously hand-folded crimson satin ribbon roses with signature ribbon bow. Never withers.",
+      "price": 1299,
+      "images": [
+        "/images/products/midnight-box-1.jpg",
+        "/images/products/midnight-box-2.jpg"
+      ],
+      "inStock": true,
+      "featured": true,
+      "options": []
+    },
+    {
+      "id": "romantic-gift-hamper",
+      "slug": "romantic-gift-hamper",
+      "name": "Romantic Ribbon Bloom Hamper",
+      "category": "Gift Hampers",
+      "description": "Rustic keepsake hamper featuring forever satin ribbon roses and golden sunflowers, fine Belgian chocolates, and a hand-poured vanilla candle.",
+      "price": 1899,
+      "images": [
+        "/images/products/hamper-1.jpg",
+        "/images/products/hamper-2.jpg"
+      ],
+      "inStock": true,
+      "featured": true,
+      "options": []
+    },
+    {
+      "id": "personalized-mug",
+      "slug": "personalized-mug",
+      "name": "Personalized Mug",
+      "category": "Personalized Gifts",
+      "description": "Custom ceramic coffee mug with heartfelt script calligraphy lettering 'Better Together'.",
+      "price": 799,
+      "images": [
+        "/images/products/gift-wrap-1.jpg",
+        "/images/products/gift-wrap-2.jpg"
+      ],
+      "inStock": true,
+      "featured": true,
+      "options": []
+    },
+    {
+      "id": "love-heart-lamp",
+      "slug": "love-heart-lamp",
+      "name": "Love Heart Lamp",
+      "category": "Home & Decor",
+      "description": "Illuminated acrylic laser-etched heart lamp with warm romantic glow and solid wooden base.",
+      "price": 999,
+      "images": [
+        "/images/products/gift-wrap-3.jpg",
+        "/images/products/gift-wrap-4.jpg"
+      ],
+      "inStock": true,
+      "featured": true,
+      "options": []
+    },
+    {
+      "id": "belgian-truffle-box",
+      "slug": "belgian-truffle-box",
+      "name": "Belgian Sweet Truffles",
+      "category": "Sweet Treats",
+      "description": "Artisan confectionery box with 12 dark chocolate truffles, hazelnut pralines, and edible gold dust.",
+      "price": 699,
+      "images": [
+        "/images/products/hamper-3.jpg",
+        "/images/products/hamper-4.jpg"
+      ],
+      "inStock": true,
+      "featured": false,
+      "options": []
+    },
+    {
+      "id": "bespoke-custom-order",
+      "slug": "bespoke-custom-order",
+      "name": "Bespoke Custom Ribbon Flower & Gift Commission",
+      "category": "Personalized Gifts",
+      "description": "Handcrafted entirely to your personal vision. Choose custom ribbon flower varieties (Satin Ribbon Roses & Golden Sunflowers), flower counts (25, 50, 100+ blooms), luxury wrapping styles, custom-printed calligraphy satin ribbons, and bespoke gift add-ons.",
+      "price": 1999,
+      "images": [
+        "/images/hero-desktop.jpg",
+        "/images/hero-mobile.jpg",
+        "/images/products/rose-bouquet-2.jpg",
+        "/images/products/glitter-rose-1.jpg"
+      ],
+      "inStock": true,
+      "featured": true,
+      "options": [
+        {
+          "id": "stem-count",
+          "label": "Ribbon Flower Count",
+          "values": [
+            "25 Ribbon Blooms",
+            "50 Ribbon Blooms",
+            "100 Grand Ribbon Blooms"
+          ]
+        },
+        {
+          "id": "flower-type",
+          "label": "Ribbon Flower Variety",
+          "values": [
+            "Crimson Ribbon Roses",
+            "Golden Ribbon Sunflowers",
+            "Rose & Sunflower Mix"
+          ]
+        },
+        {
+          "id": "ribbon",
+          "label": "Satin Ribbon Calligraphy",
+          "values": [
+            "Personalized Gold Ink",
+            "Crimson Red",
+            "Classic Black"
+          ]
+        }
+      ]
+    }
+  ],
+  "orders": [
+    {
+      "id": "order-1793106121162",
+      "reference": "HW-MLK93H",
+      "status": "preparing",
+      "items": [
+        {
+          "product": {
+            "id": "ribbon-sunflower-bouquet",
+            "name": "Golden Ribbon Sunflower Bouquet",
+            "price": 1599
+          },
+          "quantity": 1,
+          "selectedOptions": {}
+        }
+      ],
+      "customer": {
+        "name": "Kavya Nair",
+        "email": "kavya@example.com",
+        "phone": "+91 99887 76655",
+        "address": "77 Palm Grove, Whitefield",
+        "city": "Bangalore",
+        "pincode": "560066"
+      },
+      "deliveryDate": "2026-11-05",
+      "deliverySlot": "Morning Slot",
+      "notes": "Please include yellow ribbon bow",
+      "createdAt": "2026-10-27T13:02:01.162Z",
+      "updatedAt": "2026-10-27T14:36:39.265Z",
+      "statusHistory": [
+        {
+          "from": "pending",
+          "to": "confirmed",
+          "timestamp": "2026-10-27T13:02:45.416Z",
+          "by": "Happiwrapz Concierge",
+          "note": "Confirmed ribbon sunflowers in stock"
+        },
+        {
+          "from": "confirmed",
+          "to": "preparing",
+          "timestamp": "2026-10-27T14:36:39.265Z",
+          "by": "Happiwrapz Owner",
+          "note": "Status updated to preparing"
+        }
+      ]
+    },
+    {
+      "id": "order-001",
+      "reference": "HW-A3K7P9",
+      "status": "pending",
+      "items": [
+        {
+          "product": {
+            "id": "red-rose-bouquet",
+            "slug": "red-rose-bouquet",
+            "name": "Handcrafted Ribbon Rose Bouquet",
+            "category": "Flower Bouquet",
+            "description": "Artisanal satin ribbon roses folded meticulously by hand.",
+            "price": 1499,
+            "images": [
+              "/images/products/rose-bouquet-1.jpg"
+            ],
+            "inStock": true,
+            "featured": true,
+            "options": []
+          },
+          "quantity": 2,
+          "selectedOptions": {},
+          "giftMessage": "Happy Anniversary! Forever yours ♡"
+        }
+      ],
+      "customer": {
+        "name": "Priya Sharma",
+        "email": "priya@example.com",
+        "phone": "+91 98765 43210",
+        "address": "42 Lily Lane, Koramangala",
+        "city": "Bangalore",
+        "pincode": "560034"
+      },
+      "deliveryDate": "2026-11-01",
+      "deliverySlot": "Morning (9:00 AM - 12:00 PM)",
+      "notes": "Please ring the doorbell twice",
+      "createdAt": "2026-10-27T11:00:45.937Z",
+      "updatedAt": "2026-10-27T11:00:45.937Z",
+      "statusHistory": []
+    },
+    {
+      "id": "order-002",
+      "reference": "HW-B8M2T4",
+      "status": "confirmed",
+      "items": [
+        {
+          "product": {
+            "id": "glitter-rose-luxury",
+            "slug": "glitter-rose-luxury",
+            "name": "Ribbon Rose Bouquet — Glitter Luxury Edition",
+            "category": "Flower Bouquet",
+            "description": "Handcrafted glitter ribbon roses in matte black wrap.",
+            "price": 1899,
+            "images": [
+              "/images/products/rose-bouquet-4.jpg"
+            ],
+            "inStock": true,
+            "featured": true,
+            "options": []
+          },
+          "quantity": 1,
+          "selectedOptions": {}
+        }
+      ],
+      "customer": {
+        "name": "Rohit Mehta",
+        "email": "rohit@example.com",
+        "phone": "+91 87654 32109",
+        "address": "15 Rose Garden, Indiranagar",
+        "city": "Bangalore",
+        "pincode": "560038"
+      },
+      "deliveryDate": "2026-10-30",
+      "deliverySlot": "Afternoon (1:00 PM - 5:00 PM)",
+      "createdAt": "2026-10-26T13:00:45.937Z",
+      "updatedAt": "2026-10-27T01:00:45.937Z",
+      "statusHistory": [
+        {
+          "from": "pending",
+          "to": "confirmed",
+          "timestamp": "2026-10-27T01:00:45.937Z",
+          "by": "Happiwrapz Owner",
+          "note": "Bloom availability and slot confirmed on WhatsApp"
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "demo-owner",
+      "email": "owner@happiwrapz.com",
+      "name": "Happiwrapz Owner",
+      "role": "owner"
+    },
+    {
+      "id": "demo-manager",
+      "email": "manager@happiwrapz.com",
+      "name": "Store Manager",
+      "role": "manager"
+    },
+    {
+      "id": "demo-customer",
+      "email": "customer@happiwrapz.com",
+      "name": "Demo Customer",
+      "role": "customer"
+    },
+    {
+      "id": "user-1793106476268",
+      "email": "admin@happiwrapz.in",
+      "name": "admin",
+      "role": "customer"
+    }
+  ],
+  "auditLogs": [
+    {
+      "orderId": "order-1793106121162",
+      "reference": "HW-MLK93H",
+      "action": "STATUS_TRANSITION",
+      "fromStatus": "confirmed",
+      "toStatus": "preparing",
+      "actorName": "Happiwrapz Owner",
+      "actorRole": "owner",
+      "note": "Status updated to preparing",
+      "id": "audit-1793111799265-rj1i",
+      "timestamp": "2026-10-27T14:36:39.265Z"
+    },
+    {
+      "action": "CONTACT_MESSAGE_RECEIVED",
+      "actorName": "Aarav Gupta",
+      "actorRole": "customer",
+      "note": "New message from aarav@example.com regarding \"Anniversary Keepsake\"",
+      "id": "audit-1793106206115-3kvz",
+      "timestamp": "2026-10-27T13:03:26.115Z"
+    },
+    {
+      "orderId": "order-1793106121162",
+      "reference": "HW-MLK93H",
+      "action": "STATUS_TRANSITION",
+      "fromStatus": "pending",
+      "toStatus": "confirmed",
+      "actorName": "Happiwrapz Concierge",
+      "actorRole": "owner",
+      "note": "Confirmed ribbon sunflowers in stock",
+      "id": "audit-1793106165416-22vo",
+      "timestamp": "2026-10-27T13:02:45.416Z"
+    },
+    {
+      "orderId": "order-1793106121162",
+      "reference": "HW-MLK93H",
+      "action": "ORDER_CREATED",
+      "toStatus": "pending",
+      "actorName": "Kavya Nair",
+      "actorRole": "customer",
+      "note": "New request created for 1 gift items. Recipient: Bangalore",
+      "id": "audit-1793106121162-un00",
+      "timestamp": "2026-10-27T13:02:01.162Z"
+    },
+    {
+      "id": "audit-001",
+      "orderId": "order-001",
+      "reference": "HW-A3K7P9",
+      "action": "ORDER_CREATED",
+      "toStatus": "pending",
+      "actorName": "Priya Sharma",
+      "actorRole": "customer",
+      "note": "Customer submitted bespoke floral request",
+      "timestamp": "2026-10-27T11:00:45.937Z"
+    },
+    {
+      "id": "audit-002",
+      "orderId": "order-002",
+      "reference": "HW-B8M2T4",
+      "action": "STATUS_TRANSITION",
+      "fromStatus": "pending",
+      "toStatus": "confirmed",
+      "actorName": "Happiwrapz Owner",
+      "actorRole": "owner",
+      "note": "WhatsApp concierge confirmation completed with recipient",
+      "timestamp": "2026-10-27T01:00:45.937Z"
+    }
+  ],
+  "contacts": [
+    {
+      "id": "msg-1793106206115",
+      "name": "Aarav Gupta",
+      "email": "aarav@example.com",
+      "phone": "+91 91234 56789",
+      "subject": "Anniversary Keepsake",
+      "message": "Looking for 50 satin ribbon roses in a grand presentation trunk.",
+      "createdAt": "2026-10-27T13:03:26.115Z",
+      "status": "unread"
+    }
+  ],
+  "subscribers": [
+    {
+      "id": "sub-1",
+      "email": "concierge@happiwrapz.in",
+      "subscribedAt": "2026-10-27T13:00:45.944Z",
+      "active": true
+    },
+    {
+      "id": "sub-1793106189911",
+      "email": "testvip@example.com",
+      "subscribedAt": "2026-10-27T13:03:09.911Z",
+      "active": true
+    }
+  ],
+  "customOrders": [
+    {
+      "id": "cust-002",
+      "reference": "CUST-3920B",
+      "customer": {
+        "name": "Sneha Reddy",
+        "email": "sneha.reddy@gmail.com",
+        "phone": "+91 94433 22110",
+        "address": "Villa 8, Epsilon Villas, Yemlur",
+        "city": "Bangalore",
+        "pincode": "560037"
+      },
+      "occasion": "Golden 50th Wedding Anniversary",
+      "productType": "Velvet Keepsake Round Box",
+      "flowerPreferences": "50 Golden Ribbon Sunflowers & Ivory Satin Roses",
+      "stemCount": 50,
+      "wrappingStyle": "Velvet Gold Trim Wrap",
+      "boxStyle": "Velvet Keepsake Box",
+      "personalizationText": "Mom & Dad • 50 Years of Golden Harmony",
+      "giftMessage": "Wishing you both endless love and health.",
+      "budget": 4000,
+      "desiredDeliveryDate": "2026-11-10",
+      "status": "new",
+      "assignedAdmin": "Store Manager",
+      "quotation": null,
+      "convertedOrderId": null,
+      "createdAt": "2026-10-27T12:33:16.304Z",
+      "updatedAt": "2026-10-27T12:33:16.304Z",
+      "statusHistory": []
+    },
+    {
+      "id": "cust-001",
+      "reference": "CUST-8491A",
+      "customer": {
+        "name": "Vikram Singhania",
+        "email": "vikram.s@singhania.co",
+        "phone": "+91 97766 55443",
+        "address": "Penthouse 12, Kingfisher Towers, Ashok Nagar",
+        "city": "Bangalore",
+        "pincode": "560001"
+      },
+      "occasion": "Proposal & Engagement",
+      "productType": "Grand Keepsake Acrylic Showcase",
+      "flowerPreferences": "100 Crimson Satin Ribbon Roses with Subtle Diamond Sparkle",
+      "stemCount": 100,
+      "wrappingStyle": "Parisian Matte Black with Gold Rim",
+      "boxStyle": "Grand Acrylic Showcase",
+      "personalizationText": "Aisha, Forever My Queen • 14.02.2026",
+      "giftMessage": "Will you make me the happiest person forever?",
+      "budget": 6500,
+      "desiredDeliveryDate": "2026-11-05",
+      "desiredDeliverySlot": "Evening (6:00 PM - 9:00 PM)",
+      "specialInstructions": "Needs warm fairy lights woven between stems and velvet keepsake ribbon.",
+      "status": "quote_sent",
+      "assignedAdmin": "Happiwrapz Owner",
+      "quotation": {
+        "id": "quote-001",
+        "customOrderId": "cust-001",
+        "lineItems": [
+          {
+            "id": "li-1",
+            "description": "100 Hand-folded Satin Crimson Ribbon Roses",
+            "quantity": 1,
+            "unitPrice": 4500,
+            "total": 4500
+          },
+          {
+            "id": "li-2",
+            "description": "Museum-grade Grand Acrylic Showcase Box with Gold Base",
+            "quantity": 1,
+            "unitPrice": 950,
+            "total": 950
+          },
+          {
+            "id": "li-3",
+            "description": "Warm LED Micro Fairy Lights & Velvet Bow Calligraphy",
+            "quantity": 1,
+            "unitPrice": 350,
+            "total": 350
+          }
+        ],
+        "customizationFee": 400,
+        "packagingFee": 200,
+        "deliveryFee": 0,
+        "discount": 200,
+        "tax": 0,
+        "total": 6200,
+        "estimatedPrepTimeHours": 18,
+        "expiresAt": "2026-11-01T14:33:16.304Z",
+        "notes": "Quotation includes hand delivery by our master florist directly to venue.",
+        "status": "sent",
+        "materialCostEstimate": 2100,
+        "laborCostEstimate": 1200,
+        "createdAt": "2026-10-27T02:33:16.304Z",
+        "updatedAt": "2026-10-27T02:33:16.304Z"
+      },
+      "convertedOrderId": null,
+      "createdAt": "2026-10-26T18:33:16.304Z",
+      "updatedAt": "2026-10-27T02:33:16.304Z",
+      "statusHistory": [
+        {
+          "from": "new",
+          "to": "reviewing",
+          "timestamp": "2026-10-26T20:33:16.304Z",
+          "by": "Happiwrapz Owner",
+          "note": "Reviewed client request and venue requirements"
+        },
+        {
+          "from": "reviewing",
+          "to": "quote_sent",
+          "timestamp": "2026-10-27T02:33:16.304Z",
+          "by": "Happiwrapz Owner",
+          "note": "Formal proposal quotation sent via WhatsApp"
+        }
+      ]
+    }
+  ],
+  "quotations": [],
+  "inventoryMovements": [
+    {
+      "id": "inv-001",
+      "productId": "red-rose-bouquet",
+      "productName": "Handcrafted Ribbon Rose Bouquet",
+      "change": 50,
+      "previousStock": 0,
+      "newStock": 50,
+      "reason": "restock",
+      "actorName": "Happiwrapz Owner",
+      "actorRole": "owner",
+      "referenceId": "BATCH-2026-OCT",
+      "timestamp": "2026-10-23T14:33:16.304Z"
+    },
+    {
+      "id": "inv-002",
+      "productId": "red-rose-bouquet",
+      "productName": "Handcrafted Ribbon Rose Bouquet",
+      "change": -2,
+      "previousStock": 50,
+      "newStock": 48,
+      "reason": "order_fulfillment",
+      "actorName": "Store Manager",
+      "actorRole": "manager",
+      "referenceId": "order-001",
+      "timestamp": "2026-10-27T12:33:16.304Z"
+    },
+    {
+      "id": "inv-003",
+      "productId": "glitter-rose-luxury",
+      "productName": "Ribbon Rose Bouquet — Glitter Luxury Edition",
+      "change": 30,
+      "previousStock": 0,
+      "newStock": 30,
+      "reason": "restock",
+      "actorName": "Happiwrapz Owner",
+      "actorRole": "owner",
+      "timestamp": "2026-10-24T14:33:16.304Z"
+    }
+  ],
+  "coupons": [
+    {
+      "id": "coup-1",
+      "code": "WELCOME10",
+      "type": "percentage",
+      "value": 10,
+      "minOrderAmount": 1499,
+      "maxDiscountAmount": 300,
+      "usageLimit": 500,
+      "usedCount": 38,
+      "validFrom": "2026-01-01T00:00:00.000Z",
+      "validUntil": "2026-12-31T23:59:59.000Z",
+      "active": true,
+      "applicableCategory": "all",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "coup-2",
+      "code": "ATELIER10",
+      "type": "percentage",
+      "value": 10,
+      "minOrderAmount": 2500,
+      "maxDiscountAmount": 500,
+      "usageLimit": 200,
+      "usedCount": 14,
+      "validFrom": "2026-01-01T00:00:00.000Z",
+      "validUntil": "2026-12-31T23:59:59.000Z",
+      "active": true,
+      "applicableCategory": "Gift Hamper",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "coup-3",
+      "code": "FLORAL250",
+      "type": "fixed",
+      "value": 250,
+      "minOrderAmount": 1999,
+      "usageLimit": 100,
+      "usedCount": 22,
+      "validFrom": "2026-02-01T00:00:00.000Z",
+      "validUntil": "2026-11-30T23:59:59.000Z",
+      "active": true,
+      "applicableCategory": "all",
+      "createdAt": "2026-02-01T00:00:00.000Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-001",
+      "title": "New Custom Order Inquiry",
+      "message": "Sneha Reddy requested a 50-stem Sunflower & Rose Golden Anniversary arrangement.",
+      "type": "custom_order",
+      "referenceId": "cust-002",
+      "link": "/admin/custom-orders/cust-002",
+      "isRead": true,
+      "createdAt": "2026-10-27T12:33:16.304Z"
+    },
+    {
+      "id": "notif-002",
+      "title": "Quotation Sent to Client",
+      "message": "Quotation of ₹6,200 sent to Vikram Singhania for Proposal Showcase.",
+      "type": "quote_accepted",
+      "referenceId": "cust-001",
+      "link": "/admin/custom-orders/cust-001",
+      "isRead": true,
+      "createdAt": "2026-10-27T02:33:16.304Z"
+    },
+    {
+      "id": "notif-003",
+      "title": "Order Delivered Successfully",
+      "message": "Order HW-K9P4X2 (Eternal Ribbon Hamper) was delivered to Ananya Deshmukh.",
+      "type": "order",
+      "referenceId": "order-003",
+      "link": "/admin/orders/order-003",
+      "isRead": true,
+      "createdAt": "2026-10-25T14:33:16.304Z"
+    }
+  ],
+  "websiteSettings": {
+    "announcement": "🎀 Handcrafted with love — Order requests open for Bangalore delivery",
+    "announcementActive": true,
+    "announcementLink": "/catalog",
+    "heroHeading": "The Moments Deserve Flowers.",
+    "heroSubheading": "Handcrafted satin ribbon roses, eternal sunflowers that never wilt, and signature European hand-tied wraps in Bangalore with zero upfront payment.",
+    "heroButtonText": "Explore Collection",
+    "heroButtonLink": "/catalog",
+    "promoBannerActive": true,
+    "promoBannerText": "✨ Handcrafted in Bangalore • Complimentary Handwritten Wax-Sealed Note Included",
+    "contactPhone": "+91 98765 43210",
+    "contactEmail": "concierge@happiwrapz.in",
+    "deliveryRadiusKm": 25,
+    "minLeadTimeHours": 4,
+    "storeOpen": true,
+    "publishedAt": "2026-10-27T14:33:16.304Z",
+    "updatedBy": "Happiwrapz Owner"
+  }
+}

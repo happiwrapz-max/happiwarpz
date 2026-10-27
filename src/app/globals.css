@@ -1,0 +1,609 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ══════════════════════════════════════════════════════════════════
+   HAPPIWRAPZ LUXURY FLORAL ATELIER DESIGN SYSTEM TOKENS
+   Palette:
+     • Signal Luxury Red: #E10600 (Dark: #C20500, Subtle: rgba(225, 6, 0, 0.08))
+     • Pure White:        #FFFFFF
+     • Warm Subtle White: #FAFAFA / #FAF8F5
+     • Charcoal Text:     #1E1E1E / #5A5A5A
+     • Atelier Border:    #EFEAE2
+   ══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Clean White & Red Luxury Florist Palette */
+  --color-warm-white: #FFFFFF;
+  --color-warm-white-subtle: #FAFAFA;
+  --color-signal-red: #E10600;
+  --color-signal-red-hover: #C20500;
+  --color-charcoal: #1E1E1E;
+  --color-border: #EFEAE2;
+
+  --color-background: #FFFFFF;
+  --color-background-secondary: #FAFAF8;
+  --color-text-primary: #1E1E1E;
+  --color-text-secondary: #5A5A5A;
+  --color-primary: #E10600;
+
+  /* Brand Master Tokens */
+  --deep-burgundy: #E10600;
+  --deep-burgundy-dark: #C20500;
+  --deep-burgundy-light: #FF2E28;
+  --deep-burgundy-subtle: rgba(225, 6, 0, 0.06);
+  --deep-burgundy-glow: rgba(225, 6, 0, 0.20);
+  
+  --mocha-cream: #F8F6F2;
+  --mocha-cream-light: #FAF8F5;
+  --mocha-cream-warm: #F4EFEB;
+  --mocha-cream-surface: #FFFFFF;
+  
+  --cosmic-latte: #E8E2D8;
+  --cosmic-latte-light: #F0EBE3;
+  --cosmic-latte-dark: #D4CCC0;
+  --cosmic-latte-subtle: rgba(232, 226, 216, 0.3);
+
+  --espresso-brown: #1E1E1E;
+  --espresso-brown-light: #5A5A5A;
+  --warm-ivory: #FFFFFF;
+
+  --canvas-bg: #FFFFFF;
+  --canvas-warm: #FAF8F5;
+  --canvas-surface: #FFFFFF;
+  --canvas-card: #FFFFFF;
+  --canvas-cream: #FAF8F5;
+
+  /* Editorial Luxury Typography */
+  --font-serif: var(--font-cormorant), 'Cormorant Garamond', Garamond, Georgia, serif;
+  --font-sans: var(--font-jakarta), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: var(--font-mono), 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Typography Colors */
+  --text-primary: #1E1E1E;
+  --text-dark: #111111;
+  --text-secondary: #5A5A5A;
+  --text-tertiary: #888888;
+  --text-muted: #9E9E9E;
+  --text-inverse: #FFFFFF;
+  --text-accent: #E10600;
+
+  /* Borders & Doppelrand Rims */
+  --border-subtle: #EFEAE2;
+  --border-medium: #E2DAD0;
+  --border-dark: #E10600;
+  --border-focus: #E10600;
+
+  /* Status Colors */
+  --status-pending: #B45309;
+  --status-pending-bg: rgba(180, 83, 9, 0.1);
+  --status-confirmed: #059669;
+  --status-confirmed-bg: rgba(5, 150, 105, 0.1);
+  --status-preparing: #E10600;
+  --status-preparing-bg: rgba(225, 6, 0, 0.1);
+  --status-ready: #6B21A8;
+  --status-ready-bg: rgba(107, 33, 168, 0.1);
+  --status-delivered: #047857;
+  --status-delivered-bg: rgba(4, 120, 87, 0.12);
+  --status-cancelled: #DC2626;
+  --status-cancelled-bg: rgba(220, 38, 38, 0.1);
+
+  /* Elevation & Shadows */
+  --shadow-2xs: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.10);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 24px var(--deep-burgundy-glow);
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-pill: 9999px;
+
+  /* Layout */
+  --container-max: 1360px;
+  --container-padding: 24px;
+
+  /* Motion & Transitions */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 150ms var(--ease-smooth);
+  --transition-normal: 250ms var(--ease-smooth);
+  --transition-slow: 400ms var(--ease-spring);
+
+  /* shadcn UI compatibility mappings */
+  --background: #FFFFFF;
+  --foreground: #1E1E1E;
+  --card: #FFFFFF;
+  --card-foreground: #1E1E1E;
+  --popover: #FFFFFF;
+  --popover-foreground: #1E1E1E;
+  --primary: #E10600;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F8F6F2;
+  --secondary-foreground: #E10600;
+  --muted: #F8F6F2;
+  --muted-foreground: #5A5A5A;
+  --accent: #E10600;
+  --accent-foreground: #FFFFFF;
+  --destructive: #DC2626;
+  --border: #EFEAE2;
+  --input: #E8E2D8;
+  --ring: #E10600;
+  --radius: 0.75rem;
+
+  --sidebar: #1F1F1F;
+  --sidebar-foreground: #FAF6EF;
+  --sidebar-primary: #E10600;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #2A2A2A;
+  --sidebar-accent-foreground: #FAF6EF;
+  --sidebar-border: #333333;
+  --sidebar-ring: #E10600;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BASE LAYER & EDITORIAL STYLES
+   ══════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    background-color: var(--canvas-bg);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  * {
+    border-color: var(--border-subtle);
+  }
+}
+
+/* ── Typography Classes ────────────────────────────────────────── */
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ── Selection & Focus ─────────────────────────────────────────── */
+
+::selection {
+  background-color: rgba(225, 6, 0, 0.15);
+  color: var(--deep-burgundy-dark);
+}
+
+:focus-visible {
+  outline: 2px solid var(--deep-burgundy);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Minimalist Custom Scrollbar ───────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mocha-cream-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--cosmic-latte);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--deep-burgundy);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   HAPPIWRAPZ COSMIC BOTANICAL SIGNATURE COMPONENTS
+   ══════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* Container */
+  .container-main {
+    width: 100%;
+    max-width: var(--container-max);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+  }
+
+  /* Doppelrand Rim (Luxury Double Border Frame) */
+  .doppelrand {
+    border: 1px solid var(--cosmic-latte);
+    box-shadow: 0 0 0 1px var(--mocha-cream-warm), 0 0 0 2px var(--cosmic-latte);
+  }
+
+  /* Rounded Pill Button (Primary Action - Deep Burgundy) */
+  .btn-pill-primary,
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    border-radius: 9999px;
+    background-color: var(--deep-burgundy);
+    color: #FAF6EF;
+    padding: 14px 32px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    letter-spacing: 0.02em;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(225, 6, 0, 0.22);
+    transition: background-color 200ms ease,
+                color 200ms ease,
+                border-color 200ms ease,
+                transform 150ms ease,
+                box-shadow 200ms ease;
+  }
+
+  .btn-pill-primary:hover,
+  .btn-primary:hover {
+    background-color: var(--deep-burgundy-dark);
+    color: #FFFFFF;
+    box-shadow: 0 6px 20px rgba(225, 6, 0, 0.35);
+  }
+
+  .btn-pill-primary:active,
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-pill-primary:focus-visible,
+  .btn-primary:focus-visible {
+    outline: 2px solid var(--deep-burgundy);
+    outline-offset: 2px;
+  }
+
+  /* Rounded Pill Button (Secondary Outline - Cosmic Latte / Mocha Cream) */
+  .btn-pill-secondary,
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    border-radius: 9999px;
+    background-color: rgba(232, 220, 198, 0.4);
+    color: var(--deep-burgundy);
+    padding: 12px 28px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    letter-spacing: 0.02em;
+    border: 1.5px solid var(--cosmic-latte);
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color 200ms ease,
+                color 200ms ease,
+                background-color 200ms ease,
+                transform 150ms ease;
+  }
+
+  .btn-pill-secondary:hover,
+  .btn-secondary:hover {
+    border-color: var(--deep-burgundy);
+    color: var(--deep-burgundy-dark);
+    background-color: var(--mocha-cream);
+  }
+
+  .btn-pill-secondary:active,
+  .btn-secondary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-pill-secondary:focus-visible,
+  .btn-secondary:focus-visible {
+    outline: 2px solid var(--deep-burgundy);
+    outline-offset: 2px;
+  }
+
+  /* Deep Burgundy Accent Pill */
+  .btn-pill-accent {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    border-radius: 9999px;
+    background-color: var(--deep-burgundy);
+    color: #FAF6EF;
+    padding: 14px 32px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(225, 6, 0, 0.25);
+    transition: background-color 200ms ease,
+                box-shadow 200ms ease,
+                transform 150ms ease;
+  }
+
+  .btn-pill-accent:hover {
+    background-color: var(--deep-burgundy-dark);
+    box-shadow: 0 8px 24px rgba(225, 6, 0, 0.38);
+  }
+
+  .btn-pill-accent:active {
+    transform: scale(0.98);
+  }
+
+  .btn-pill-accent:focus-visible {
+    outline: 2px solid var(--deep-burgundy);
+    outline-offset: 2px;
+  }
+
+  /* ── Studio Badge & Canonical Labels ───────────────────────────── */
+
+  .badge-studio {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    background-color: var(--mocha-cream-warm);
+    border: 1px solid var(--cosmic-latte);
+    color: var(--deep-burgundy);
+    box-shadow: 0 1px 4px rgba(225, 6, 0, 0.05);
+  }
+
+  .badge-canonical {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    background-color: var(--deep-burgundy);
+    color: #FAF6EF;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid rgba(232, 220, 198, 0.3);
+    box-shadow: 0 4px 14px rgba(225, 6, 0, 0.25);
+  }
+
+  .badge-charcoal {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    background-color: var(--deep-burgundy);
+    color: #FAF6EF;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .badge-red {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    background-color: var(--deep-burgundy-light);
+    color: #FAF6EF;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ── Filter Tabs ──────────────────────────────────────────────── */
+
+  .filter-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 22px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    min-height: 38px;
+    cursor: pointer;
+    border: none;
+    transition: all 200ms ease;
+  }
+
+  .filter-pill-active {
+    background-color: var(--deep-burgundy);
+    color: #FAF6EF;
+    box-shadow: 0 2px 8px rgba(225, 6, 0, 0.25);
+  }
+
+  .filter-pill-inactive {
+    background-color: transparent;
+    color: var(--text-secondary);
+  }
+
+  .filter-pill-inactive:hover {
+    color: var(--deep-burgundy);
+    background-color: rgba(232, 220, 198, 0.6);
+  }
+
+  /* ── Status Badges ────────────────────────────────────────────── */
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+    text-transform: uppercase;
+  }
+
+  .badge-pending {
+    background-color: var(--status-pending-bg);
+    color: var(--status-pending);
+    border: 1px solid rgba(180, 83, 9, 0.2);
+  }
+
+  .badge-confirmed {
+    background-color: var(--status-confirmed-bg);
+    color: var(--status-confirmed);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+  }
+
+  .badge-preparing {
+    background-color: var(--status-preparing-bg);
+    color: var(--status-preparing);
+    border: 1px solid rgba(225, 6, 0, 0.2);
+  }
+
+  .badge-ready {
+    background-color: var(--status-ready-bg);
+    color: var(--status-ready);
+    border: 1px solid rgba(107, 33, 168, 0.2);
+  }
+
+  .badge-delivered {
+    background-color: var(--status-delivered-bg);
+    color: var(--status-delivered);
+    border: 1px solid rgba(4, 120, 87, 0.25);
+  }
+
+  .badge-cancelled {
+    background-color: var(--status-cancelled-bg);
+    color: var(--status-cancelled);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+  }
+
+  /* ── Celestial & Botanical Decorative Layers ──────────────────── */
+
+  .celestial-star {
+    color: var(--deep-burgundy);
+    opacity: 0.85;
+    animation: celestialPulse 4s ease-in-out infinite;
+  }
+
+  .celestial-leaf {
+    color: var(--deep-burgundy);
+    opacity: 0.9;
+  }
+
+  .pedestal-surface {
+    background: radial-gradient(circle at 50% 50%, #FAF6EF 0%, #E8DCC6 75%, #D4C9BD 100%);
+    border: 1.5px solid var(--cosmic-latte);
+    box-shadow: 0 16px 38px rgba(225, 6, 0, 0.10), inset 0 2px 4px rgba(255, 255, 255, 0.8);
+  }
+
+  .glass-surface {
+    background: rgba(250, 246, 239, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--cosmic-latte);
+  }
+
+  .glass-burgundy {
+    background: rgba(225, 6, 0, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* ── Keyframe Animations ───────────────────────────────────────── */
+
+@keyframes celestialPulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.15) rotate(15deg);
+    opacity: 1;
+  }
+}
+
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float-gentle {
+  animation: floatGentle 5s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TAILWIND THEME BINDINGS
+   ══════════════════════════════════════════════════════════════════ */
+
+@theme inline {
+  --color-deep-burgundy: var(--deep-burgundy);
+  --color-deep-burgundy-dark: var(--deep-burgundy-dark);
+  --color-deep-burgundy-light: var(--deep-burgundy-light);
+
+  --color-mocha-cream: var(--mocha-cream);
+  --color-mocha-cream-light: var(--mocha-cream-light);
+  --color-mocha-cream-warm: var(--mocha-cream-warm);
+
+  --color-cosmic-latte: var(--cosmic-latte);
+  --color-cosmic-latte-light: var(--cosmic-latte-light);
+  --color-cosmic-latte-dark: var(--cosmic-latte-dark);
+
+  --color-canvas-bg: var(--canvas-bg);
+  --color-canvas-surface: var(--canvas-surface);
+  --color-canvas-card: var(--canvas-card);
+
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}

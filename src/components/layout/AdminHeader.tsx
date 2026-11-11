@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
@@ -17,6 +17,7 @@ import {
   Package,
   ShoppingBag,
   SlidersHorizontal,
+  Plus,
 } from "lucide-react";
 import { AdminNotification } from "@/lib/store/types";
 
@@ -46,7 +47,7 @@ export default function AdminHeader({
   const profileRef = useRef<HTMLDivElement>(null);
 
   // Load live notifications
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/notifications");
       const data = await res.json();
@@ -57,12 +58,28 @@ export default function AdminHeader({
     } catch {
       // Non-blocking
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
-    return () => clearInterval(interval);
+    let active = true;
+    const run = async () => {
+      try {
+        const res = await fetch("/api/admin/notifications");
+        const data = await res.json();
+        if (active && data.success && Array.isArray(data.notifications)) {
+          setNotifications(data.notifications);
+          setUnreadCount(data.notifications.filter((n: AdminNotification) => !n.isRead).length);
+        }
+      } catch {
+        // Non-blocking
+      }
+    };
+    run();
+    const interval = setInterval(run, 15000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // Close dropdowns on outside click
@@ -130,7 +147,7 @@ export default function AdminHeader({
 
   return (
     <>
-      <header className="h-14 sm:h-16 bg-white border-b border-[#EFEAE2] px-3 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+      <header className="h-14 sm:h-16 shrink-0 bg-white border-b border-[#EFEAE2] px-3 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
         {/* Left Side: Collapse Toggle on desktop / Drawer Toggle on mobile & Breadcrumbs */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* Mobile Drawer Button */}
@@ -210,11 +227,14 @@ export default function AdminHeader({
             </kbd>
           </button>
 
-          {/* Store Status Pill */}
-          <div className="hidden lg:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-medium text-emerald-800">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-            <span>Studio Open</span>
-          </div>
+          {/* Quick Create Action */}
+          <Link
+            href="/admin/products/new"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E10600] text-white hover:bg-[#c00500] text-xs font-serif font-semibold transition-all shadow-xs hover:scale-102"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Product</span>
+          </Link>
 
           {/* Notifications Dropdown */}
           <div className="relative" ref={notifRef}>

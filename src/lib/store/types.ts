@@ -21,6 +21,44 @@ export interface Product {
   preparationHours?: number;
   tags?: string[];
   archived?: boolean;
+  flowerTiers?: FlowerCountTier[];
+  colorOptions?: string[];
+  reviews?: ProductReview[];
+  rating?: number;
+  reviewsCount?: number;
+  customizationSettings?: {
+    allowColorSelection?: boolean;
+    allowCustomColor?: boolean;
+    allowPersonalizationMessage?: boolean;
+    allowRibbonColor?: boolean;
+    minFlowerCount?: number;
+    maxFlowerCount?: number;
+  };
+}
+
+export interface FlowerCountTier {
+  id: string;
+  count: number;
+  label?: string;
+  price: number;
+  isDefault?: boolean;
+}
+
+export interface ProductReview {
+  id: string;
+  productId: string;
+  authorName: string;
+  authorEmail?: string;
+  rating: number; // 1 to 5
+  title: string;
+  comment: string;
+  verifiedBuyer: boolean;
+  flowerCount?: number;
+  colorChosen?: string;
+  images?: string[];
+  status?: "approved" | "pending" | "rejected" | "hidden";
+  createdAt: string;
+  helpfulCount?: number;
 }
 
 export interface ProductOption {
@@ -33,6 +71,13 @@ export interface BagItem {
   product: Product;
   quantity: number;
   selectedOptions: Record<string, string>;
+  selectedFlowerCount?: number;
+  selectedColor?: string;
+  customColorNote?: string;
+  ribbonColor?: string;
+  personalizationMessage?: string;
+  specialInstructions?: string;
+  tierPrice?: number;
   giftMessage?: string;
 }
 
@@ -54,6 +99,9 @@ export interface OrderRequest {
   customOrderId?: string;
   paymentMethod?: string;
   paymentStatus?: "pending" | "confirmed_whatsapp" | "paid" | "refunded";
+  trackingNumber?: string;
+  trackingUrl?: string;
+  courierName?: string;
   createdAt: string;
   updatedAt: string;
   statusHistory: StatusChange[];
@@ -78,6 +126,7 @@ export interface StatusChange {
 
 export type AdminRole =
   | "owner"
+  | "admin"
   | "super_admin"
   | "manager"
   | "order_manager"
@@ -94,6 +143,10 @@ export interface User {
   role: AdminRole;
   avatar?: string;
   createdAt?: string;
+  hasPassword?: boolean;
+  passwordHash?: string;
+  passwordUpdatedAt?: string;
+  passwordSetBy?: string;
 }
 
 // ── Advanced Custom Orders & Quotations ──────────────────────────────────────
@@ -221,10 +274,15 @@ export interface WebsiteSettings {
   heroSubheading: string;
   heroButtonText: string;
   heroButtonLink: string;
+  heroDesktopImage?: string;
+  heroMobileImage?: string;
+  aboutImage?: string;
   promoBannerActive: boolean;
   promoBannerText: string;
   contactPhone: string;
   contactEmail: string;
+  contactLocation?: string;
+  instagramUrl?: string;
   deliveryRadiusKm: number;
   minLeadTimeHours: number;
   storeOpen: boolean;
@@ -233,31 +291,33 @@ export interface WebsiteSettings {
   updatedBy: string;
 }
 
-// ── Demo Accounts ───────────────────────────────────────────────────────────
+// ── Initial Seed / Staff Accounts ─────────────────────────────────────────────
 
-export const DEMO_ACCOUNTS: User[] = [
+export const INITIAL_STAFF_ACCOUNTS: User[] = [
   {
-    id: "demo-owner",
+    id: "usr-owner-01",
     email: "owner@happiwrapz.com",
     name: "Happiwrapz Owner",
     role: "owner",
   },
   {
-    id: "demo-manager",
+    id: "usr-manager-01",
     email: "manager@happiwrapz.com",
     name: "Store Manager",
     role: "manager",
   },
   {
-    id: "demo-product-manager",
+    id: "usr-catalog-01",
     email: "catalog@happiwrapz.com",
     name: "Catalog Lead",
     role: "product_manager",
   },
   {
-    id: "demo-customer",
+    id: "usr-customer-01",
     email: "customer@happiwrapz.com",
-    name: "Demo Customer",
+    name: "Prestige Customer",
     role: "customer",
   },
 ];
+
+export const DEMO_ACCOUNTS = INITIAL_STAFF_ACCOUNTS;

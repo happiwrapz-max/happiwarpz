@@ -1,12 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import {
   LayoutDashboard,
   ShoppingBag,
-  Sparkles,
   Package,
   Layers,
   Boxes,
@@ -15,7 +15,7 @@ import {
   BarChart3,
   FileEdit,
   Bell,
-  ShieldAlert,
+  ShieldCheck,
   ClipboardList,
   Settings,
   ChevronRight,
@@ -23,15 +23,24 @@ import {
   LogOut,
   ChevronLeft,
   X,
+  Plus,
+  Sparkles,
+  Activity,
 } from "lucide-react";
 import { RibbonEmblem } from "@/components/ui/RibbonEmblem";
 
 interface NavItem {
   href: string;
   label: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }> | React.ElementType;
   badge?: string;
+  badgeColor?: string;
   ownerOnly?: boolean;
+  quickAction?: {
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    title: string;
+  };
 }
 
 interface NavGroup {
@@ -58,62 +67,105 @@ export default function AdminSidebar({
 
   const role = user?.role || "owner";
 
-  // Navigation items categorized by operational department
-  const navItems: NavGroup[] = [
-    {
-      group: "Core Operations",
-      items: [
-        { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/admin/orders", label: "Orders", icon: ShoppingBag, badge: "3" },
-        { href: "/admin/custom-orders", label: "Custom Orders", icon: RibbonEmblem, badge: "New" },
-        { href: "/admin/inventory", label: "Inventory", icon: Boxes },
-      ],
-    },
-    {
-      group: "Catalog & Merchandising",
-      items: [
-        { href: "/admin/products", label: "Products", icon: Package },
-        { href: "/admin/categories", label: "Categories", icon: Layers },
-        { href: "/admin/occasions", label: "Occasions", icon: RibbonEmblem },
-        { href: "/admin/discounts", label: "Discounts & Coupons", icon: Tag },
-        { href: "/admin/content", label: "Website Studio", icon: FileEdit },
-      ],
-    },
-    {
-      group: "Clientele & Intelligence",
-      items: [
-        { href: "/admin/customers", label: "Customers", icon: Users },
-        { href: "/admin/analytics", label: "Analytics & Reports", icon: BarChart3 },
-        { href: "/admin/notifications", label: "Notifications", icon: Bell },
-      ],
-    },
-    {
-      group: "Governance & Settings",
-      items: [
-        { href: "/admin/team", label: "Admin Users & Roles", icon: ShieldAlert, ownerOnly: true },
-        { href: "/admin/audit-log", label: "Activity Logs", icon: ClipboardList, ownerOnly: true },
-        { href: "/admin/settings", label: "Settings", icon: Settings },
-      ],
-    },
-  ];
+  // Streamlined 4-group navigation hierarchy that fits cleanly on all screen heights
+  const navGroups: NavGroup[] = useMemo(
+    () => [
+      {
+        group: "Overview",
+        items: [
+          { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+          { href: "/admin/analytics", label: "Analytics & Reports", icon: BarChart3 },
+        ],
+      },
+      {
+        group: "Orders & Operations",
+        items: [
+          {
+            href: "/admin/orders",
+            label: "Orders Queue",
+            icon: ShoppingBag,
+            badge: "Active",
+            badgeColor: "bg-[#E10600] text-white",
+          },
+          {
+            href: "/admin/custom-orders",
+            label: "Custom Commissions",
+            icon: RibbonEmblem,
+            badge: "New",
+            badgeColor: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
+          },
+          { href: "/admin/inventory", label: "Inventory & Stock", icon: Boxes },
+        ],
+      },
+      {
+        group: "Catalog & Studio",
+        items: [
+          {
+            href: "/admin/products",
+            label: "Products",
+            icon: Package,
+            quickAction: {
+              href: "/admin/products/new",
+              icon: Plus,
+              title: "Add Product",
+            },
+          },
+          { href: "/admin/categories", label: "Categories", icon: Layers },
+          { href: "/admin/occasions", label: "Occasions", icon: Sparkles },
+          { href: "/admin/content", label: "Website Studio", icon: FileEdit },
+          { href: "/admin/discounts", label: "Discounts & Coupons", icon: Tag },
+        ],
+      },
+      {
+        group: "Administration & Settings",
+        items: [
+          { href: "/admin/customers", label: "Customers", icon: Users },
+          { href: "/admin/notifications", label: "Notifications", icon: Bell },
+          {
+            href: "/admin/monitoring",
+            label: "Health & Monitoring",
+            icon: Activity,
+            badge: "Live",
+            badgeColor: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
+          },
+          {
+            href: "/admin/team",
+            label: "Staff Roles",
+            icon: ShieldCheck,
+            ownerOnly: true,
+          },
+          {
+            href: "/admin/audit-log",
+            label: "Audit Logs",
+            icon: ClipboardList,
+            ownerOnly: true,
+          },
+          { href: "/admin/settings", label: "Store Settings", icon: Settings },
+        ],
+      },
+    ],
+    []
+  );
 
   const renderNavContent = (isMobileView: boolean) => (
-    <>
-      {/* Brand Header */}
-      <div className="p-4 sm:p-5 border-b border-[#333] flex items-center justify-between">
+    <div className="flex flex-col h-full bg-[#121214] text-white select-none">
+      {/* ── Brand Header ── */}
+      <div className="h-14 sm:h-16 px-3 sm:px-4 border-b border-white/10 flex items-center justify-between shrink-0">
         <Link
           href="/admin"
           onClick={isMobileView ? onCloseMobile : undefined}
-          className="flex items-center gap-2.5 overflow-hidden"
+          className="flex items-center gap-2.5 overflow-hidden group"
         >
-          <span className="w-2.5 h-2.5 rounded-full bg-[#E10600] shrink-0 animate-pulse" />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-[#E10600] to-[#990400] flex items-center justify-center shrink-0 shadow-md shadow-[#E10600]/30 group-hover:scale-105 transition-transform">
+            <RibbonEmblem className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+          </div>
           {(!isCollapsed || isMobileView) && (
-            <div>
-              <span className="text-base font-serif font-bold tracking-tight text-white block leading-tight">
+            <div className="min-w-0">
+              <span className="text-sm font-serif font-bold tracking-tight text-white block leading-tight">
                 Happiwrapz
               </span>
-              <span className="text-[9px] text-[#AAA] font-serif uppercase tracking-[0.2em] font-semibold">
-                Admin Studio
+              <span className="text-[8.5px] text-[#A1A1AA] uppercase tracking-[0.18em] font-semibold block">
+                Atelier Console
               </span>
             </div>
           )}
@@ -123,8 +175,8 @@ export default function AdminSidebar({
           <button
             type="button"
             onClick={onCloseMobile}
-            className="text-[#AAA] hover:text-white p-2 rounded-lg transition-colors cursor-pointer"
-            aria-label="Close sidebar"
+            className="text-[#A1A1AA] hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close menu"
           >
             <X className="w-5 h-5" />
           </button>
@@ -132,7 +184,7 @@ export default function AdminSidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="text-[#888] hover:text-white p-1 rounded-md transition-colors cursor-pointer hidden md:block"
+            className="text-[#71717A] hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors cursor-pointer hidden md:block"
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -140,14 +192,14 @@ export default function AdminSidebar({
         )}
       </div>
 
-      {/* Navigation List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-5 scrollbar-thin">
-        {navItems.map((group, gIdx) => (
-          <div key={gIdx} className="space-y-1">
+      {/* ── Navigation Items ── */}
+      <div className="flex-1 overflow-y-auto px-2.5 sm:px-3 py-3 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
+        {navGroups.map((group, gIdx) => (
+          <div key={gIdx} className="space-y-0.5">
             {(!isCollapsed || isMobileView) && (
-              <span className="text-[9.5px] font-bold uppercase tracking-wider text-[#777] px-3 block mb-1">
+              <h3 className="text-[9.5px] uppercase tracking-[0.16em] font-semibold text-[#71717A] px-2.5 mb-1">
                 {group.group}
-              </span>
+              </h3>
             )}
             {group.items.map((item) => {
               if (item.ownerOnly && role !== "owner" && role !== "super_admin") return null;
@@ -159,94 +211,124 @@ export default function AdminSidebar({
                   : pathname.startsWith(item.href);
 
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={isMobileView ? onCloseMobile : undefined}
-                  title={isCollapsed && !isMobileView ? item.label : undefined}
-                  className={`flex items-center ${
-                    isCollapsed && !isMobileView ? "justify-center px-2 py-3" : "justify-between px-3 py-2.5"
-                  } rounded-xl text-xs font-medium transition-all duration-200 group ${
-                    isActive
-                      ? "bg-[#E10600] text-white font-semibold shadow-xs"
-                      : "text-[#CCC] hover:bg-white/6 hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-4 h-4 shrink-0" />
-                    {(!isCollapsed || isMobileView) && <span className="truncate">{item.label}</span>}
-                  </div>
-                  {(!isCollapsed || isMobileView) && item.badge && !isActive && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[9.5px] font-bold bg-[#E10600]/20 text-[#FF6B6B]">
-                      {item.badge}
-                    </span>
+                <div key={item.href} className="group/item relative flex items-center">
+                  <Link
+                    href={item.href}
+                    onClick={isMobileView ? onCloseMobile : undefined}
+                    title={isCollapsed && !isMobileView ? item.label : undefined}
+                    className={`flex-1 flex items-center ${
+                      isCollapsed && !isMobileView ? "justify-center px-1.5 py-2" : "justify-between px-2.5 py-1.5"
+                    } rounded-xl text-xs font-medium transition-all duration-200 ${
+                      isActive
+                        ? "bg-[#E10600] text-white font-semibold shadow-md shadow-[#E10600]/25"
+                        : "text-[#D4D4D8] hover:text-white hover:bg-white/[0.07]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? "scale-105" : "text-[#A1A1AA] group-hover/item:text-white"}`} />
+                      {(!isCollapsed || isMobileView) && (
+                        <span className="truncate">{item.label}</span>
+                      )}
+                    </div>
+
+                    {(!isCollapsed || isMobileView) && item.badge && (
+                      <span
+                        className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase tracking-wider ${
+                          item.badgeColor || "bg-white/10 text-white"
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+
+                  {/* Optional Quick Add Icon for Products */}
+                  {(!isCollapsed || isMobileView) && item.quickAction && (
+                    <Link
+                      href={item.quickAction.href}
+                      onClick={isMobileView ? onCloseMobile : undefined}
+                      title={item.quickAction.title}
+                      className="p-1 ml-0.5 text-[#71717A] hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <item.quickAction.icon className="w-3.5 h-3.5" />
+                    </Link>
                   )}
-                </Link>
+                </div>
               );
             })}
           </div>
         ))}
       </div>
 
-      {/* Footer Info & User Switcher */}
-      <div className="p-3 border-t border-[#333] space-y-2 bg-[#191919]">
+      {/* ── User & Live Storefront Footer ── */}
+      <div className="p-2.5 sm:p-3 border-t border-white/10 space-y-1.5 bg-[#0E0E10] shrink-0">
         <Link
           href="/"
           target="_blank"
           onClick={isMobileView ? onCloseMobile : undefined}
           className={`flex items-center ${
-            isCollapsed && !isMobileView ? "justify-center p-2" : "justify-between px-3 py-2"
-          } rounded-xl text-xs text-[#AAA] hover:text-white hover:bg-white/6 transition-colors`}
-          title="View Live Storefront"
+            isCollapsed && !isMobileView ? "justify-center p-2" : "justify-between px-2.5 py-1.5"
+          } rounded-xl text-xs text-[#A1A1AA] hover:text-white hover:bg-white/[0.08] transition-colors border border-white/5`}
+          title="Open Live Website in New Tab"
         >
           <span className="flex items-center gap-2">
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5 text-[#E10600]" />
             {(!isCollapsed || isMobileView) && <span>Live Storefront</span>}
           </span>
-          {(!isCollapsed || isMobileView) && <ChevronRight className="w-3.5 h-3.5 text-[#666]" />}
+          {(!isCollapsed || isMobileView) && (
+            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.2 rounded-sm bg-emerald-950 text-emerald-400 border border-emerald-800/40">
+              Online
+            </span>
+          )}
         </Link>
 
         {(!isCollapsed || isMobileView) && (
-          <div className="flex items-center justify-between px-3 pt-2 border-t border-[#2A2A2A]">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-white truncate">
-                {user?.name || "Store Owner"}
-              </p>
-              <p className="text-[10px] text-[#888] truncate">
-                {user?.email || "owner@happiwrapz.com"}
-              </p>
+          <div className="flex items-center justify-between px-2 pt-1.5 border-t border-white/5">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-full bg-[#E10600]/20 border border-[#E10600]/40 flex items-center justify-center text-[11px] font-bold text-[#FF6B6B] shrink-0">
+                {(user?.name || "O")[0].toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-white truncate leading-tight">
+                  {user?.name || "Store Owner"}
+                </p>
+                <p className="text-[9.5px] text-[#71717A] truncate">
+                  {user?.role || "owner"}
+                </p>
+              </div>
             </div>
+
             <button
               type="button"
               onClick={() => {
                 logout();
                 router.push("/login");
               }}
-              className="p-1.5 text-[#888] hover:text-[#E10600] transition-colors cursor-pointer"
-              title="Log out"
+              className="p-1 text-[#71717A] hover:text-[#E10600] hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+              title="Sign Out"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 
   return (
     <>
-      {/* Mobile Off-Canvas Drawer Backdrop */}
+      {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 md:hidden transition-opacity"
+          className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 md:hidden transition-opacity"
           onClick={onCloseMobile}
           aria-hidden="true"
         />
       )}
 
-      {/* Mobile Off-Canvas Slide-in Drawer */}
+      {/* Mobile Drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] bg-[#1E1E1E] text-white flex flex-col md:hidden shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[85vw] flex flex-col md:hidden shadow-2xl transition-transform duration-300 ease-in-out ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -255,7 +337,7 @@ export default function AdminSidebar({
 
       {/* Desktop Sticky Sidebar */}
       <aside
-        className={`hidden md:flex flex-col h-screen sticky top-0 shrink-0 border-r border-[#333] transition-all duration-300 select-none z-40 bg-[#1E1E1E] text-white ${
+        className={`hidden md:flex flex-col h-full shrink-0 border-r border-[#242428] transition-all duration-300 z-40 ${
           isCollapsed ? "w-20" : "w-64"
         }`}
       >
@@ -264,5 +346,3 @@ export default function AdminSidebar({
     </>
   );
 }
-
-

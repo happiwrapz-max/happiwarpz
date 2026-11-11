@@ -27,6 +27,7 @@ import {
   Gift,
   Check
 } from "lucide-react";
+import { buildCloudinaryUrl } from "@/lib/cloudinary";
 
 export default function BagDrawer() {
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function BagDrawer() {
   // Step 3: Recipient & Address state
   const [recipientName, setRecipientName] = useState(user?.name || "");
   const [phoneNumber, setPhoneNumber] = useState("+91 ");
-  const [city, setCity] = useState("Bangalore");
+  const [city, setCity] = useState("Coimbatore");
   const [street, setStreet] = useState("");
   const [houseNumber, setHouseNumber] = useState("");
   const [postalCode, setPostalCode] = useState("560034");
@@ -269,7 +270,7 @@ export default function BagDrawer() {
                       >
                         <div className="relative w-18 h-18 rounded-xl overflow-hidden bg-[#FAF8F5] shrink-0 border border-[#EFEAE2] p-1">
                           <Image
-                            src={item.product.images[0]}
+                            src={buildCloudinaryUrl(item.product.images[0], { preset: "thumbnail" })}
                             alt={item.product.name}
                             fill
                             className="object-contain"
@@ -288,6 +289,26 @@ export default function BagDrawer() {
                             {formatPrice(item.product.price)}
                           </p>
 
+                          {/* Flower Count & Color Badges */}
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            {item.selectedFlowerCount && (
+                              <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAF8F5] text-[10px] text-[#1E1E1E] font-medium border border-[#EFEAE2]">
+                                💐 {item.selectedFlowerCount} Flowers
+                              </span>
+                            )}
+                            {item.selectedColor && (
+                              <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAF8F5] text-[10px] text-[#555] border border-[#EFEAE2]">
+                                {item.selectedColor}
+                              </span>
+                            )}
+                          </div>
+
+                          {item.customColorNote && (
+                            <p className="text-[10px] text-[#555] bg-[#FAF8F5] p-1.5 rounded mt-1 border border-[#EFEAE2] line-clamp-2">
+                              <span className="font-semibold text-[#1E1E1E]">Custom Note:</span> {item.customColorNote}
+                            </p>
+                          )}
+
                           {item.giftMessage && (
                             <p className="text-[10px] text-[#666] italic bg-[#FAF8F5] p-1.5 rounded mt-1 border border-[#EFEAE2] line-clamp-1">
                               &ldquo;{item.giftMessage}&rdquo;
@@ -298,7 +319,12 @@ export default function BagDrawer() {
                           <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#EFEAE2]/60">
                             <div className="flex items-center border border-[#EFEAE2] rounded-full h-7 px-1.5 bg-[#FAF8F5]">
                               <button
-                                onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                onClick={() =>
+                                  updateQuantity(item.product.id, item.quantity - 1, {
+                                    selectedFlowerCount: item.selectedFlowerCount,
+                                    selectedColor: item.selectedColor,
+                                  })
+                                }
                                 className="w-5 h-5 flex items-center justify-center text-[#555] hover:text-[#E10600] cursor-pointer"
                                 aria-label="Decrease quantity"
                               >
@@ -308,7 +334,12 @@ export default function BagDrawer() {
                                 {item.quantity}
                               </span>
                               <button
-                                onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                onClick={() =>
+                                  updateQuantity(item.product.id, item.quantity + 1, {
+                                    selectedFlowerCount: item.selectedFlowerCount,
+                                    selectedColor: item.selectedColor,
+                                  })
+                                }
                                 className="w-5 h-5 flex items-center justify-center text-[#555] hover:text-[#E10600] cursor-pointer"
                                 aria-label="Increase quantity"
                               >
@@ -317,7 +348,12 @@ export default function BagDrawer() {
                             </div>
 
                             <button
-                              onClick={() => removeItem(item.product.id)}
+                              onClick={() =>
+                                removeItem(item.product.id, {
+                                  selectedFlowerCount: item.selectedFlowerCount,
+                                  selectedColor: item.selectedColor,
+                                })
+                              }
                               className="text-[#999] hover:text-[#E10600] transition-colors p-1 cursor-pointer"
                               aria-label="Remove item"
                             >

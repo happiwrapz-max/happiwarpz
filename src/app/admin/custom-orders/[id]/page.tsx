@@ -288,7 +288,7 @@ export default function CustomOrderDetailPage({
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-[#888] block">Presentation Format</span>
-                <p className="font-semibold text-[#1E1E1E] mt-0.5">{custom.boxStyle || "Standard Atelier Wrap"}</p>
+                <p className="font-semibold text-[#1E1E1E] mt-0.5">{custom.boxStyle || "Standard Signature Wrap"}</p>
               </div>
             </div>
 

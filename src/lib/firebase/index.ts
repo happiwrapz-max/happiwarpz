@@ -1,8 +1,7 @@
 export {
   app,
-  auth,
-  db,
-  storage,
   firebaseConfig,
+  getFirebaseAuth,
+  getGoogleProvider,
   getFirebaseAnalytics,
 } from "./config";

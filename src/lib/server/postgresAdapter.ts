@@ -574,3 +574,87 @@ export async function pgSaveSubscriber(s: Subscriber): Promise<boolean> {
     return false;
   }
 }
+
+// ── Notifications, Payments & Returns ─────────────────────────────────────────
+
+export interface PaymentRecord {
+  id: string;
+  orderId: string;
+  orderReference: string;
+  amount: number;
+  currency: string;
+  status: string;
+  gateway: string;
+  transactionId?: string;
+  payerEmail?: string;
+  payerPhone?: string;
+  idempotencyKey?: string;
+  metadata?: Record<string, any>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ReturnRecord {
+  id: string;
+  orderId: string;
+  orderReference: string;
+  customerEmail: string;
+  reason: string;
+  status: string;
+  refundAmount: number;
+  refundStatus: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function pgSavePayment(p: PaymentRecord): Promise<boolean> {
+  if (!sql || !isPostgresConfigured) return false;
+  try {
+    await sql`
+      INSERT INTO payments (
+        id, order_id, order_reference, amount, currency, status,
+        gateway, transaction_id, payer_email, payer_phone, idempotency_key, metadata,
+        created_at, updated_at
+      ) VALUES (
+        ${p.id}, ${p.orderId}, ${p.orderReference}, ${p.amount}, ${p.currency || 'INR'},
+        ${p.status || 'pending'}, ${p.gateway || 'whatsapp_cod'}, ${p.transactionId || null},
+        ${p.payerEmail || null}, ${p.payerPhone || null}, ${p.idempotencyKey || null},
+        ${JSON.stringify(p.metadata || {})},
+        ${p.createdAt || new Date().toISOString()}, ${p.updatedAt || new Date().toISOString()}
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        status = EXCLUDED.status,
+        updated_at = NOW()
+    `;
+    return true;
+  } catch (err) {
+    console.warn("[Postgres] pgSavePayment error:", err);
+    return false;
+  }
+}
+
+export async function pgSaveReturn(r: ReturnRecord): Promise<boolean> {
+  if (!sql || !isPostgresConfigured) return false;
+  try {
+    await sql`
+      INSERT INTO returns (
+        id, order_id, order_reference, customer_email, reason, status,
+        refund_amount, refund_status, notes, created_at, updated_at
+      ) VALUES (
+        ${r.id}, ${r.orderId}, ${r.orderReference}, ${r.customerEmail}, ${r.reason},
+        ${r.status || 'requested'}, ${r.refundAmount || 0}, ${r.refundStatus || 'pending'},
+        ${r.notes || null}, ${r.createdAt || new Date().toISOString()}, ${r.updatedAt || new Date().toISOString()}
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        status = EXCLUDED.status,
+        refund_status = EXCLUDED.refund_status,
+        updated_at = NOW()
+    `;
+    return true;
+  } catch (err) {
+    console.warn("[Postgres] pgSaveReturn error:", err);
+    return false;
+  }
+}
+

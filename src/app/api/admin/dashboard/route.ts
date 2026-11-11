@@ -1,7 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDashboardAnalytics } from "@/lib/server/db";
+import { requireAdmin } from "@/lib/server/security";
+import { handleApiError } from "@/lib/server/errors";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  // Requirement 2 & 14: Server-side admin verification
+  const adminCheck = requireAdmin(request);
+  if ("errorResponse" in adminCheck) {
+    return adminCheck.errorResponse;
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "30d";
@@ -9,10 +17,6 @@ export async function GET(request: Request) {
     const analytics = await getDashboardAnalytics(period);
     return NextResponse.json({ success: true, ...analytics });
   } catch (err: any) {
-    console.error("Dashboard Analytics API Error:", err);
-    return NextResponse.json(
-      { success: false, error: err.message || "Failed to load dashboard analytics" },
-      { status: 500 }
-    );
+    return handleApiError(err, "Failed to load dashboard analytics");
   }
 }

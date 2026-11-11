@@ -18,7 +18,7 @@ export default function TermsPage() {
             Terms & Service Guidelines
           </h1>
           <p className="text-xs sm:text-sm text-[#666] mt-2">
-            Effective October 2026 • Handcrafted Ribbon Flowers & Luxury Gift Wrapping Atelier
+            Effective October 2026 • Handcrafted Ribbon Flowers & Luxury Gift Wrapping Studio
           </p>
         </div>
 
@@ -55,10 +55,10 @@ export default function TermsPage() {
           <div className="space-y-3">
             <h2 className="font-serif text-lg sm:text-xl text-[#1E1E1E] font-semibold flex items-center gap-2">
               <Heart className="w-5 h-5 text-[#E10600]" />
-              <span>3. Hand Delivery in Bangalore</span>
+              <span>3. Hand Delivery in Coimbatore</span>
             </h2>
             <p>
-              We provide white-glove hand delivery across all Bangalore pin codes (including Koramangala, Indiranagar, Whitefield, HSR Layout, and Jayanagar). Delivery slots are allocated in Morning (9:00 AM - 12:00 PM), Afternoon (1:00 PM - 5:00 PM), and Evening (6:00 PM - 9:00 PM) windows.
+              We provide hand delivery across all Coimbatore areas and express dispatch across Tamil Nadu and pan-India. Delivery slots are allocated in Morning (9:00 AM - 12:00 PM), Afternoon (1:00 PM - 5:00 PM), and Evening (6:00 PM - 9:00 PM) windows.
             </p>
           </div>
 
@@ -69,11 +69,11 @@ export default function TermsPage() {
               <span>4. Concierge Assistance</span>
             </h2>
             <p>
-              Have special customization requests or need bespoke corporate gift hampers? Reach our atelier desk directly:
+              Have special customization requests or need bespoke corporate gift hampers? Reach our concierge desk directly:
             </p>
             <div className="pt-2 flex flex-wrap gap-3">
               <a
-                href="https://wa.me/919876543210?text=Hello%20Happiwrapz!%20I%20have%20a%20question%20about%20terms."
+                href="https://wa.me/917708354636?text=Hello%20Happiwrapz!%20I%20have%20a%20question%20about%20terms."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#25D366] text-white text-xs font-serif uppercase tracking-wider font-semibold shadow-xs"

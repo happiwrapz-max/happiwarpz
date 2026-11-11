@@ -18,16 +18,14 @@ export default function OrderRequestForm() {
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState("+91 ");
   const [address, setAddress] = useState("");
-  const [city, setCity] = useState("Bangalore");
+  const [city, setCity] = useState("Coimbatore");
   const [pincode, setPincode] = useState("");
-  const [deliveryDate, setDeliveryDate] = useState("");
-  const [deliverySlot, setDeliverySlot] = useState("Morning (9:00 AM - 12:00 PM)");
-
-  useEffect(() => {
+  const [deliveryDate, setDeliveryDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    setDeliveryDate(d.toISOString().split("T")[0]);
-  }, []);
+    return d.toISOString().split("T")[0];
+  });
+  const [deliverySlot, setDeliverySlot] = useState("Morning (9:00 AM - 12:00 PM)");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

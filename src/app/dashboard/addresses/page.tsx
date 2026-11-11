@@ -160,7 +160,7 @@ export default function SavedAddressesPage() {
               <input
                 type="text"
                 disabled
-                value="Bangalore"
+                value="Coimbatore"
                 className="w-full text-xs p-2.5 bg-zinc-100 border border-[#C0C0C0] rounded-lg text-[#666666]"
               />
             </div>

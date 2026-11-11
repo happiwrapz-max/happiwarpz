@@ -1,47 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrders, createOrder } from "@/lib/server/db";
+import { getAuthenticatedUser } from "@/lib/server/security";
+import { checkRateLimit, ORDER_RATE_LIMIT } from "@/lib/server/rateLimit";
+import { sanitizeString, sanitizeEmail, sanitizePhone } from "@/lib/server/sanitize";
+import { calculateOrderPricing } from "@/lib/server/pricing";
+import { handleApiError } from "@/lib/server/errors";
 
 export async function GET(request: NextRequest) {
   try {
+    const user = getAuthenticatedUser(request);
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || undefined;
-    const email = searchParams.get("email") || undefined;
+    const requestedEmail = searchParams.get("email") || undefined;
     const search = searchParams.get("search") || undefined;
 
-    const orders = await getOrders({ status, email, search });
+    // Requirement 9 (Stop IDOR): Listing orders strictly requires an authenticated session
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required to view orders." },
+        { status: 401 }
+      );
+    }
 
+    // Customer role: strictly bound to their own email, ignoring any spoofed query params
+    if (user.role === "customer") {
+      const orders = await getOrders({ status, email: user.email, search });
+      return NextResponse.json({ success: true, count: orders.length, orders });
+    }
+
+    // Admin / Owner / Fulfillment: Authorized to query global orders with filters
+    const orders = await getOrders({ status, email: requestedEmail, search });
     return NextResponse.json({
       success: true,
       count: orders.length,
       orders,
     });
   } catch (error) {
-    console.error("API GET /api/orders error:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch orders" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Failed to fetch orders");
   }
 }
 
 export async function POST(request: NextRequest) {
+  // Requirement 4 (Rate Limiting)
+  const rateLimitResult = checkRateLimit(request, ORDER_RATE_LIMIT);
+  if (!rateLimitResult.allowed) {
+    return rateLimitResult.response;
+  }
+
   try {
     const body = await request.json();
 
-    if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "At least one gift item is required" },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !body.customer ||
-      !body.customer.name ||
-      !body.customer.email ||
-      !body.customer.phone ||
-      !body.customer.address
-    ) {
+    if (!body.customer || !body.customer.name || !body.customer.email || !body.customer.phone || !body.customer.address) {
       return NextResponse.json(
         {
           success: false,
@@ -51,21 +60,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const cleanEmail = sanitizeEmail(body.customer.email);
+    const cleanPhone = sanitizePhone(body.customer.phone);
+    if (!cleanEmail || !cleanPhone) {
+      return NextResponse.json(
+        { success: false, error: "Please provide a valid email and phone number." },
+        { status: 400 }
+      );
+    }
+
+    // Requirement 3 (Never Trust the Frontend) - Calculate prices & coupon discounts server-side
+    const pricingResult = await calculateOrderPricing(body.items, body.couponCode);
+    if (!pricingResult.success) {
+      return NextResponse.json({ success: false, error: pricingResult.error }, { status: 400 });
+    }
+
+    const { validatedItems, subtotal, discountAmount, couponCode, deliveryFee, totalAmount } =
+      pricingResult.data;
+
     const newOrder = await createOrder({
-      items: body.items,
+      items: validatedItems,
       customer: {
-        name: body.customer.name.trim(),
-        email: body.customer.email.trim(),
-        phone: body.customer.phone.trim(),
-        address: body.customer.address.trim(),
-        city: body.customer.city?.trim() || "Bangalore",
-        pincode: body.customer.pincode?.trim() || "",
+        name: sanitizeString(body.customer.name, 100),
+        email: cleanEmail,
+        phone: cleanPhone,
+        address: sanitizeString(body.customer.address, 300),
+        city: sanitizeString(body.customer.city || "Coimbatore", 100),
+        pincode: sanitizeString(body.customer.pincode || "", 20),
       },
-      deliveryDate: body.deliveryDate,
-      deliverySlot: body.deliverySlot || "Morning (9:00 AM - 12:00 PM)",
-      notes: body.notes?.trim() || undefined,
-      couponCode: body.couponCode?.trim() || undefined,
-      discountAmount: body.discountAmount ? Number(body.discountAmount) : 0,
+      deliveryDate: sanitizeString(body.deliveryDate, 50),
+      deliverySlot: sanitizeString(body.deliverySlot || "Morning (9:00 AM - 12:00 PM)", 100),
+      notes: body.notes ? sanitizeString(body.notes, 500) : undefined,
+      couponCode,
+      discountAmount,
     });
 
     return NextResponse.json(
@@ -78,10 +105,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("API POST /api/orders error:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to create order request" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Failed to create order request");
   }
 }

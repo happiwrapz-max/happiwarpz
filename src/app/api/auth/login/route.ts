@@ -1,75 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserByEmail, createUser } from "@/lib/server/db";
-import { DEMO_ACCOUNTS } from "@/lib/store/types";
+import { getUserByEmail, createUser, sanitizeUser } from "@/lib/server/db";
+import { attachSessionCookie, verifyPassword, isStaffRole } from "@/lib/server/security";
+import { checkRateLimit, AUTH_RATE_LIMIT } from "@/lib/server/rateLimit";
+import { sanitizeEmail, sanitizeString } from "@/lib/server/sanitize";
+import { handleApiError } from "@/lib/server/errors";
 
 export async function POST(request: NextRequest) {
+  // 1. Rate Limiting defense against brute force & credential stuffing
+  const rateLimitResult = checkRateLimit(request, AUTH_RATE_LIMIT);
+  if (!rateLimitResult.allowed) {
+    return rateLimitResult.response;
+  }
+
   try {
     const body = await request.json();
-    const { email, password, role } = body;
-
-    // Handle demo quick login
-    if (role) {
-      const demoUser = DEMO_ACCOUNTS.find((u) => u.role === role);
-      if (demoUser) {
-        const response = NextResponse.json({
-          success: true,
-          user: demoUser,
-          message: `Logged in as demo ${role}`,
-        });
-        response.cookies.set("hw_session", JSON.stringify(demoUser), {
-          httpOnly: true,
-          path: "/",
-          sameSite: "lax",
-          maxAge: 60 * 60 * 24 * 7, // 7 days
-        });
-        return response;
-      }
-    }
+    const email = sanitizeEmail(body.email);
+    const name = body.name ? sanitizeString(body.name) : undefined;
+    const providedPassword = typeof body.password === "string" ? body.password : undefined;
 
     if (!email) {
       return NextResponse.json(
-        { success: false, error: "Email is required" },
+        { success: false, error: "A valid email address is required" },
         { status: 400 }
       );
     }
 
-    // Check existing demo or db users
+    // Retrieve verified account or provision new customer
     let user = await getUserByEmail(email);
 
     if (!user) {
-      // Check demo accounts
-      const demo = DEMO_ACCOUNTS.find((d) => d.email.toLowerCase() === email.toLowerCase());
-      if (demo) {
-        user = demo;
-      } else {
-        // Auto-provision customer for friction-free ordering
-        user = await createUser({
-          email,
-          name: email.split("@")[0].replace(/[._-]/g, " "),
-          role: "customer",
-        });
+      // Auto-provision verified customer (never default to staff/admin)
+      user = await createUser({
+        email,
+        name: name || email.split("@")[0].replace(/[._-]/g, " "),
+        role: "customer",
+      });
+    } else {
+      if (name && !user.name) {
+        user.name = name;
+      }
+
+      // If user is staff and has a password configured by Admin, verify it strictly
+      if (isStaffRole(user.role) && user.passwordHash) {
+        if (!providedPassword || !verifyPassword(providedPassword, user.passwordHash)) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                "Invalid staff password. If you forgot your password, contact your Store Administrator to reset it.",
+            },
+            { status: 401 }
+          );
+        }
       }
     }
 
+    const safeUser = sanitizeUser(user);
+
     const response = NextResponse.json({
       success: true,
-      user,
+      user: safeUser,
       message: "Authentication successful",
     });
 
-    response.cookies.set("hw_session", JSON.stringify(user), {
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    // Attach tamper-proof signed session cookie
+    attachSessionCookie(response, safeUser);
 
     return response;
   } catch (error) {
-    console.error("API POST /api/auth/login error:", error);
-    return NextResponse.json(
-      { success: false, error: "Authentication failed" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Authentication failed. Please verify credentials.");
   }
 }

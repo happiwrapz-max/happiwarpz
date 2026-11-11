@@ -1,38 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createUser, getUserByEmail } from "@/lib/server/db";
+import { attachSessionCookie } from "@/lib/server/security";
+import { checkRateLimit, AUTH_RATE_LIMIT } from "@/lib/server/rateLimit";
+import { sanitizeEmail, sanitizeString } from "@/lib/server/sanitize";
+import { handleApiError } from "@/lib/server/errors";
 
 export async function POST(request: NextRequest) {
+  // Rate limiting defense against automated account creation
+  const rateLimitResult = checkRateLimit(request, AUTH_RATE_LIMIT);
+  if (!rateLimitResult.allowed) {
+    return rateLimitResult.response;
+  }
+
   try {
     const body = await request.json();
-    const { name, email, password } = body;
+    const cleanEmail = sanitizeEmail(body.email);
+    const cleanName = sanitizeString(body.name, 100);
 
-    if (!email || !name) {
+    if (!cleanEmail || !cleanName) {
       return NextResponse.json(
-        { success: false, error: "Name and email are required" },
+        { success: false, error: "A valid name and email address are required" },
         { status: 400 }
       );
     }
 
-    const existing = await getUserByEmail(email);
+    const existing = await getUserByEmail(cleanEmail);
     if (existing) {
-      // Return existing user
-      const response = NextResponse.json({
-        success: true,
-        user: existing,
-        message: "Account already exists, signed in successfully",
-      });
-      response.cookies.set("hw_session", JSON.stringify(existing), {
-        httpOnly: true,
-        path: "/",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7,
-      });
-      return response;
+      return NextResponse.json(
+        { success: false, error: "An account with this email already exists. Please log in." },
+        { status: 409 }
+      );
     }
 
     const newUser = await createUser({
-      name,
-      email,
+      name: cleanName,
+      email: cleanEmail,
       role: "customer",
     });
 
@@ -45,19 +47,9 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
 
-    response.cookies.set("hw_session", JSON.stringify(newUser), {
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
+    attachSessionCookie(response, newUser);
     return response;
   } catch (error) {
-    console.error("API POST /api/auth/signup error:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to create account" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Failed to create account");
   }
 }

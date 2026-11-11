@@ -2,8 +2,9 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, ShieldCheck, Flower2, ArrowRight } from "lucide-react";
+import { ShieldCheck, Flower2, ArrowRight } from "lucide-react";
 import { RibbonEmblem } from "@/components/ui/RibbonEmblem";
+import { buildCloudinaryUrl } from "@/lib/cloudinary";
 
 export default function AboutPage() {
   return (
@@ -14,14 +15,14 @@ export default function AboutPage() {
         {/* Hero */}
         <div className="text-center mb-14 sm:mb-20">
           <span className="text-[11px] font-serif font-semibold tracking-[0.25em] text-[#E10600] uppercase block mb-2">
-            OUR ATELIER HERITAGE
+            OUR FLORAL HERITAGE
           </span>
           <h1 className="font-serif text-3xl sm:text-6xl text-[#1E1E1E] font-normal leading-tight">
             Artisanal Ribbon Flowers <br />
             <span className="italic font-light text-[#E10600]">Crafted to Bloom Forever</span>
           </h1>
           <p className="text-xs sm:text-sm font-sans text-[#666] mt-4 max-w-2xl mx-auto leading-relaxed">
-            Happiwrapz was founded on a simple revelation: flowers are the world's purest language of emotion, yet fresh stems wither within days. We handcraft exquisite satin ribbon roses and golden sunflowers that preserve your most cherished memories for a lifetime.
+            Happiwrapz was founded on a simple revelation: flowers are the world&apos;s purest language of emotion, yet fresh stems wither within days. Based in Coimbatore, Tamil Nadu, India, we handcraft exquisite satin ribbon roses and golden sunflowers that preserve your most cherished memories for a lifetime.
           </p>
         </div>
 
@@ -29,7 +30,10 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center mb-16 sm:mb-24">
           <div className="relative aspect-4/3 rounded-3xl overflow-hidden border border-[#EFEAE2] shadow-md bg-[#FAF8F5]">
             <Image
-              src="/images/products/rose-bouquet-1.jpg"
+              src={buildCloudinaryUrl(
+                "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881756/happiwrapz/products/rose-bouquet-1.jpg",
+                { preset: "detail" }
+              )}
               alt="Handcrafted Satin Ribbon Roses"
               fill
               className="object-cover"
@@ -45,7 +49,7 @@ export default function AboutPage() {
               Every Petal Folded by Hand
             </h2>
             <p className="text-xs sm:text-sm text-[#555] leading-relaxed">
-              In our Bangalore atelier, master artisans sculpt premium double-faced satin ribbons into true-to-nature botanical blooms. Each crimson rose demands over 25 precision folds; each radiant golden sunflower combines layered velvety petals with textured center stippling.
+              In our studio in Coimbatore, Tamil Nadu, India, master artisans sculpt premium double-faced satin ribbons into true-to-nature botanical blooms. Each crimson rose demands over 25 precision folds; each radiant golden sunflower combines layered velvety petals with textured center stippling.
             </p>
             <p className="text-xs sm:text-sm text-[#555] leading-relaxed">
               No artificial plastics or disposable stems are used. Instead, our keepsakes are finished with luxury matte European wraps, soft tissue flourishes, and handwritten calligraphy tags.

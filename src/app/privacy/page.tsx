@@ -17,7 +17,7 @@ export default function PrivacyPage() {
             Privacy Policy
           </h1>
           <p className="text-xs sm:text-sm text-[#666] mt-2">
-            Last updated October 2026 • Happiwrapz Floral Atelier Bangalore
+            Last updated October 2026 • Happiwrapz, Coimbatore, Tamil Nadu, India
           </p>
         </div>
 

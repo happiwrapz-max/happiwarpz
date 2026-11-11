@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Happiwrapz — Handcrafted Ribbon Flowers & Luxury Gifts",
     short_name: "Happiwrapz",
     description:
-      "Artisanal satin ribbon roses & golden sunflowers, glitter keepsake flowers, and luxury gift hampers in Bangalore.",
+      "Artisanal satin ribbon roses & golden sunflowers, glitter keepsake flowers, and luxury gift hampers in Coimbatore, Tamil Nadu.",
     start_url: "/",
     display: "standalone",
     background_color: "#FFFFFF",

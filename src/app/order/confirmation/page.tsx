@@ -41,7 +41,7 @@ function ConfirmationContent() {
         </h1>
 
         <p className="text-xs sm:text-sm font-sans text-[#555] max-w-md mx-auto leading-relaxed mb-8">
-          Your bespoke bouquet request has been dispatched directly to the Happiwrapz atelier owner. We are reviewing artisan crafting schedule and will connect via WhatsApp.
+          Your bespoke bouquet request has been dispatched directly to the Happiwrapz team. We are reviewing artisan crafting schedule and will connect via WhatsApp.
         </p>
 
         {/* Highlighted Order Reference Card (Image 1 & 4 inspired) */}
@@ -124,7 +124,7 @@ function ConfirmationContent() {
                   3. Handcrafted Preparation
                 </h3>
                 <p className="text-[11px] font-sans text-[#888]">
-                  European waterproof wrap and ribbon tying at our Bangalore atelier.
+                  European waterproof wrap and ribbon tying at our studio in Coimbatore, Tamil Nadu, India.
                 </p>
               </div>
             </div>

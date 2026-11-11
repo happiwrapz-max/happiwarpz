@@ -4,6 +4,7 @@ import { useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { MapPin, Phone, Mail, Clock, MessageSquare, Send, CheckCircle2, ShieldCheck } from "lucide-react";
+import { InstagramIcon } from "@/components/ui/InstagramIcon";
 
 export default function ContactPage() {
   const [name, setName] = useState("");
@@ -32,61 +33,61 @@ export default function ContactPage() {
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
-          phone: phone.trim(),
+          phone: phone.trim() || undefined,
           subject,
           message: message.trim(),
         }),
       });
 
       const data = await res.json();
-      if (res.ok && data.success) {
-        setSuccess(true);
-        setName("");
-        setEmail("");
-        setPhone("");
-        setMessage("");
-      } else {
-        setError(data.error || "Failed to send message. Please reach us on WhatsApp.");
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to submit message. Please try again.");
       }
-    } catch {
-      setError("Network error. Please try messaging our concierge on WhatsApp.");
+
+      setSuccess(true);
+      setName("");
+      setEmail("");
+      setPhone("");
+      setMessage("");
+    } catch (err: any) {
+      setError(err.message || "Something went wrong. Please reach out via WhatsApp or phone.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#1E1E1E]">
+    <div className="min-h-screen bg-[#FAF8F5] text-[#1E1E1E]">
       <Navbar />
 
       <main className="container-main max-w-5xl pt-28 pb-20 sm:pt-36 sm:pb-28 px-4 sm:px-6">
         {/* Header */}
         <div className="text-center mb-12 sm:mb-16">
           <span className="text-[11px] font-serif font-semibold tracking-[0.25em] text-[#E10600] uppercase block mb-1">
-            ATELIER CONCIERGE
+            CUSTOMER SUPPORT & CONCIERGE
           </span>
           <h1 className="font-serif text-3xl sm:text-5xl text-[#1E1E1E] font-normal">
             Get in Touch
           </h1>
           <p className="text-xs sm:text-sm font-sans text-[#666] mt-2 max-w-lg mx-auto">
-            Need a bespoke ribbon sunflower arrangement, customized anniversary hamper, or corporate gift wrapping? Our Bangalore atelier artisans are ready to assist.
+            Need a bespoke ribbon sunflower arrangement, customized anniversary hamper, or corporate gift wrapping? Our Coimbatore floral artisans are ready to assist.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Left Column: Direct Info */}
           <div className="lg:col-span-5 space-y-8">
-            <div className="bg-[#FAF8F5] rounded-3xl p-6 sm:p-8 border border-[#EFEAE2] space-y-6">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EFEAE2] space-y-6 shadow-sm">
               <h2 className="font-serif text-xl text-[#1E1E1E] font-medium">
-                Atelier Headquarters
+                Business Details
               </h2>
 
               <div className="space-y-4 text-xs sm:text-sm text-[#555]">
                 <div className="flex items-start gap-3">
                   <MapPin className="w-4 h-4 text-[#E10600] shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-[#1E1E1E] block font-medium">Atelier Address</strong>
-                    <span>Koramangala 4th Block, 100ft Road, Bangalore, Karnataka 560034</span>
+                    <strong className="text-[#1E1E1E] block font-medium">Business Location</strong>
+                    <span>Coimbatore, Tamil Nadu, India</span>
                   </div>
                 </div>
 
@@ -94,8 +95,23 @@ export default function ContactPage() {
                   <Phone className="w-4 h-4 text-[#E10600] shrink-0 mt-0.5" />
                   <div>
                     <strong className="text-[#1E1E1E] block font-medium">Direct Telephone</strong>
-                    <a href="tel:080045678923" className="hover:text-[#E10600]">
-                      0 800 456 789 23
+                    <a href="tel:+917708354636" className="hover:text-[#E10600] font-medium transition-colors">
+                      +91 7708354636
+                    </a>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <InstagramIcon className="w-4 h-4 text-[#E10600] shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-[#1E1E1E] block font-medium">Official Instagram</strong>
+                    <a
+                      href="https://www.instagram.com/happiwrapz/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-[#E10600] font-medium transition-colors"
+                    >
+                      @happiwrapz (https://www.instagram.com/happiwrapz/)
                     </a>
                   </div>
                 </div>
@@ -103,9 +119,9 @@ export default function ContactPage() {
                 <div className="flex items-start gap-3">
                   <Mail className="w-4 h-4 text-[#E10600] shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-[#1E1E1E] block font-medium">Concierge Email</strong>
-                    <a href="mailto:concierge@happiwrapz.in" className="hover:text-[#E10600]">
-                      concierge@happiwrapz.in
+                    <strong className="text-[#1E1E1E] block font-medium">Support Email</strong>
+                    <a href="mailto:contact@happiwrapz.com" className="hover:text-[#E10600] transition-colors">
+                      contact@happiwrapz.com
                     </a>
                   </div>
                 </div>
@@ -114,34 +130,50 @@ export default function ContactPage() {
                   <Clock className="w-4 h-4 text-[#E10600] shrink-0 mt-0.5" />
                   <div>
                     <strong className="text-[#1E1E1E] block font-medium">Operating Hours</strong>
-                    <span>Monday – Saturday: 9:00 AM – 7:00 PM</span>
-                    <span className="block text-[#888] text-[11px]">Sunday: By advance appointment only</span>
+                    <span>Monday – Saturday: 9:00 AM – 7:00 PM IST</span>
+                    <span className="block text-[#888] text-[11px]">Sunday: By advance order only</span>
                   </div>
                 </div>
               </div>
 
-              {/* Instant WhatsApp Action */}
-              <div className="pt-4 border-t border-[#EFEAE2]">
+              {/* Direct Buttons */}
+              <div className="pt-4 border-t border-[#EFEAE2] flex flex-col gap-2.5">
                 <a
-                  href="https://wa.me/919876543210?text=Hello%20Happiwrapz!%20I%20would%20like%20to%20inquire%20about%20a%20custom%20gift."
+                  href="tel:+917708354636"
+                  className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[#1E1E1E] hover:bg-black text-white rounded-full text-xs font-serif uppercase tracking-wider font-semibold transition-colors shadow-sm"
+                >
+                  <Phone className="w-4 h-4 text-[#E10600]" />
+                  <span>Call +91 7708354636</span>
+                </a>
+                <a
+                  href="https://www.instagram.com/happiwrapz/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white rounded-full text-xs font-serif uppercase tracking-wider font-semibold transition-all shadow-sm"
+                >
+                  <InstagramIcon className="w-4 h-4" />
+                  <span>Follow on Instagram</span>
+                </a>
+                <a
+                  href="https://wa.me/917708354636?text=Hello%20Happiwrapz!%20I%20would%20like%20to%20inquire%20about%20a%20custom%20gift."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[#25D366] hover:bg-[#1EBE5D] text-white rounded-full text-xs font-serif uppercase tracking-wider font-semibold transition-colors shadow-sm"
                 >
                   <MessageSquare className="w-4 h-4" />
-                  <span>Instant Concierge on WhatsApp</span>
+                  <span>Instant Chat on WhatsApp</span>
                 </a>
               </div>
             </div>
 
-            {/* Zero Charge Guarantee Card */}
+            {/* Quality Assurance Card */}
             <div className="bg-white rounded-2xl p-5 border border-[#EFEAE2] flex items-start gap-3 shadow-2xs">
               <ShieldCheck className="w-5 h-5 text-[#E10600] shrink-0 mt-0.5" />
               <div className="text-xs text-[#555] leading-relaxed">
                 <strong className="text-[#1E1E1E] block font-medium mb-0.5">
-                  Artisan Direct Assurance
+                  Handcrafted Quality Assurance
                 </strong>
-                Every inquiry is reviewed directly by our Bangalore floral artist. We guarantee response within 2 business hours.
+                Every inquiry is reviewed directly by our floral artists in Coimbatore. We guarantee response within 2 business hours.
               </div>
             </div>
           </div>
@@ -150,7 +182,7 @@ export default function ContactPage() {
           <div className="lg:col-span-7">
             <div className="bg-white rounded-3xl p-6 sm:p-10 border border-[#EFEAE2] shadow-sm">
               <h2 className="font-serif text-2xl text-[#1E1E1E] font-medium mb-1">
-                Send an Atelier Message
+                Send an Enquiry
               </h2>
               <p className="text-xs text-[#666] mb-6">
                 Tell us about your occasion, gift delivery date, or custom floral arrangement specifications.
@@ -163,11 +195,11 @@ export default function ContactPage() {
                   </div>
                   <h3 className="font-serif text-xl text-[#1E1E1E]">Message Received</h3>
                   <p className="text-xs text-[#666] max-w-sm mx-auto">
-                    Thank you for reaching out! Our floral concierge has logged your inquiry and will respond to your email and phone shortly.
+                    Thank you for reaching out! Our team has logged your inquiry and will respond to your email and phone shortly.
                   </p>
                   <button
                     onClick={() => setSuccess(false)}
-                    className="px-6 py-2.5 rounded-full bg-[#1E1E1E] hover:bg-[#E10600] text-white text-xs font-serif uppercase tracking-wider font-semibold transition-colors"
+                    className="px-6 py-2.5 rounded-full bg-[#1E1E1E] hover:bg-[#E10600] text-white text-xs font-serif uppercase tracking-wider font-semibold transition-colors cursor-pointer"
                   >
                     Send Another Message
                   </button>
@@ -219,7 +251,7 @@ export default function ContactPage() {
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+91 98765 43210"
+                        placeholder="+91 77083 54636"
                         className="w-full px-4 py-2.5 text-xs bg-[#FAF8F5] border border-[#EFEAE2] rounded-xl text-[#1E1E1E] focus:outline-hidden focus:border-[#E10600] focus:bg-white"
                       />
                     </div>
@@ -237,7 +269,7 @@ export default function ContactPage() {
                         <option value="Wedding / Celebration Hampers">Wedding / Celebration Hampers</option>
                         <option value="Corporate Keepsake Gifts">Corporate Keepsake Gifts</option>
                         <option value="Delivery Date Inquiry">Delivery Date Inquiry</option>
-                        <option value="Other Concierge Question">Other Concierge Question</option>
+                        <option value="General Question">General Question</option>
                       </select>
                     </div>
                   </div>
@@ -251,7 +283,7 @@ export default function ContactPage() {
                       rows={5}
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Tell us about the flower colors, recipient preferences, delivery window, or any custom calligraphy notes..."
+                      placeholder="Tell us about the flower colors, recipient preferences, delivery window, or any custom gift notes..."
                       className="w-full px-4 py-3 text-xs bg-[#FAF8F5] border border-[#EFEAE2] rounded-xl text-[#1E1E1E] focus:outline-hidden focus:border-[#E10600] focus:bg-white resize-y"
                     />
                   </div>
@@ -262,7 +294,7 @@ export default function ContactPage() {
                     className="w-full sm:w-auto px-8 py-3.5 bg-[#E10600] hover:bg-[#C20500] disabled:opacity-60 text-white rounded-full text-xs font-serif uppercase tracking-wider font-semibold transition-all duration-300 shadow-sm cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Send className="w-4 h-4" />
-                    <span>{submitting ? "Sending..." : "Send Message to Atelier"}</span>
+                    <span>{submitting ? "Sending..." : "Send Message"}</span>
                   </button>
                 </form>
               )}

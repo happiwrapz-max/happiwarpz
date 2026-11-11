@@ -1,50 +1,114 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useOrderStore } from "@/lib/store/useOrderStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
+import { useBagStore } from "@/lib/store/useBagStore";
 import { formatPrice, formatDate, formatDateTime, ORDER_STATUSES } from "@/lib/utils";
-import { Package, Clock, ArrowRight, ShieldCheck, Phone, MessageSquare } from "lucide-react";
+import {
+  Package,
+  Clock,
+  ArrowRight,
+  ShieldCheck,
+  Phone,
+  MessageSquare,
+  Printer,
+  RotateCcw,
+  Sparkles,
+  ExternalLink,
+  ChevronDown,
+  Gift,
+} from "lucide-react";
+import { OrderRequest } from "@/lib/store/types";
+import CourierTrackerCard from "@/components/order/CourierTrackerCard";
 
 export default function DashboardOrdersPage() {
   const { user } = useAuthStore();
-  const orders = useOrderStore((s) => s.orders);
+  const addItem = useBagStore((s) => s.addItem);
+  const openDrawer = useBagStore((s) => s.openDrawer);
 
-  const userEmail = user?.email || "priya@example.com";
-  const userOrders =
-    user?.role === "customer"
+  const [orders, setOrders] = useState<OrderRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [reorderSuccess, setReorderSuccess] = useState<string | null>(null);
+
+  // Fetch orders from live API on mount
+  useEffect(() => {
+    async function loadOrders() {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/orders");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.orders)) {
+          setOrders(data.orders);
+        }
+      } catch (err) {
+        console.error("Dashboard orders fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadOrders();
+  }, []);
+
+  const userEmail = user?.email || "";
+  const userName = user?.name || "";
+
+  // Filter orders for the logged-in customer, or show recent orders
+  const displayOrders =
+    user?.role === "customer" && userEmail
       ? orders.filter(
           (o) =>
-            o.customer.email.toLowerCase() === userEmail.toLowerCase() ||
-            o.customer.name.toLowerCase().includes(user?.name.toLowerCase() || "")
+            o.customer?.email?.toLowerCase() === userEmail.toLowerCase() ||
+            (userName && o.customer?.name?.toLowerCase().includes(userName.toLowerCase()))
         )
-      : orders.slice(0, 3);
+      : orders.slice(0, 5);
 
-  const displayOrders = userOrders.length > 0 ? userOrders : orders.slice(0, 2);
+  const handleReorder = (order: OrderRequest) => {
+    for (const item of order.items) {
+      addItem(item.product, item.quantity, item.giftMessage, {
+        selectedFlowerCount: item.selectedFlowerCount,
+        selectedColor: item.selectedColor,
+        customColorNote: item.customColorNote,
+        tierPrice: item.product.price,
+      });
+    }
+    setReorderSuccess(order.reference);
+    setTimeout(() => {
+      setReorderSuccess(null);
+      openDrawer();
+    }, 900);
+  };
+
+  const handlePrintReceipt = () => {
+    if (typeof window !== "undefined") {
+      window.print();
+    }
+  };
 
   return (
     <div className="space-y-8">
       <div>
         <span className="text-[11px] font-serif font-semibold tracking-[0.25em] text-[#E10600] uppercase block mb-1">
-          ORDER CONCIERGE
+          CONCIERGE CLIENT PORTAL
         </span>
         <h1 className="font-serif text-3xl sm:text-4xl text-[#1E1E1E] font-normal">
-          My Gift Requests
+          My Gift Orders & Deliveries
         </h1>
         <p className="text-xs sm:text-sm font-sans text-[#666] mt-1 max-w-xl">
-          Track the real-time status of your requested bouquets and hampers.
-          All orders are verified directly by our store owner without upfront online payment.
+          View your order history, third-party courier tracking links, and live consignment IDs with 1-click clipboard auto-copy.
         </p>
       </div>
 
-      {displayOrders.length === 0 ? (
+      {loading ? (
+        <div className="p-12 text-center text-xs text-[#888]">Loading orders...</div>
+      ) : displayOrders.length === 0 ? (
         <div className="p-12 text-center border border-dashed border-[#EFEAE2] rounded-3xl bg-[#FAF8F5]">
           <Package className="w-10 h-10 text-[#888] mx-auto mb-3" />
           <h3 className="font-serif text-lg text-[#1E1E1E] font-semibold">
             No Order Requests Yet
           </h3>
           <p className="text-xs text-[#666] mt-1 mb-6">
-            Explore our handcrafted red rose bouquets and submit your first request.
+            Explore our handcrafted red rose bouquets and submit your first request with zero upfront payment.
           </p>
           <Link
             href="/catalog"
@@ -54,7 +118,7 @@ export default function DashboardOrdersPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {displayOrders.map((order) => {
             const statusConfig = ORDER_STATUSES[order.status] || {
               label: order.status,
@@ -62,29 +126,29 @@ export default function DashboardOrdersPage() {
             };
 
             const whatsappMessage = encodeURIComponent(
-              `Hello Happiwrapz! Inquiring about order request ${order.reference} for ${order.customer.name}.`
+              `Hello Happiwrapz! Checking status of my order ${order.reference} for ${order.customer?.name || "Customer"}.`
             );
 
             return (
               <div
-                key={order.id}
-                className="bg-white rounded-3xl border border-[#EFEAE2] p-6 shadow-xs hover:border-[#E10600]/40 transition-all space-y-4"
+                key={order.id || order.reference}
+                className="bg-white rounded-3xl border border-[#EFEAE2] p-6 sm:p-7 shadow-xs hover:border-[#D1C7BD] transition-all space-y-6"
               >
-                {/* Header Row */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-[#EFEAE2]">
+                {/* Header Row: Reference, Date, Status */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-[#EFEAE2]">
                   <div>
                     <span className="text-[10px] font-serif uppercase tracking-wider text-[#888]">
-                      Reference Code
+                      Order Reference
                     </span>
-                    <h2 className="font-mono text-xl font-bold text-[#E10600]">
+                    <h2 className="font-mono text-xl sm:text-2xl font-bold text-[#E10600]">
                       {order.reference}
                     </h2>
-                    <p className="text-[11px] text-[#777]">
+                    <p className="text-[11px] text-[#777] mt-0.5">
                       Submitted on {formatDateTime(order.createdAt)}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-serif font-semibold uppercase tracking-wider border ${statusConfig.color}`}
                     >
@@ -93,80 +157,135 @@ export default function DashboardOrdersPage() {
                   </div>
                 </div>
 
-                {/* Body Details */}
+                {/* ── Third-Party Courier Tracking Module ── */}
+                <CourierTrackerCard order={order} />
+
+                {/* Delivery Schedule & Recipient Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
-                  <div className="space-y-1 bg-[#FAF8F5] p-3.5 rounded-2xl border border-[#EFEAE2]">
+                  <div className="space-y-1 bg-[#FAF8F5] p-4 rounded-2xl border border-[#EFEAE2]">
                     <span className="font-serif uppercase text-[10px] text-[#888] tracking-wider block">
                       Delivery Window
                     </span>
                     <p className="font-medium text-[#1E1E1E]">
                       {order.deliveryDate ? formatDate(order.deliveryDate) : formatDate(order.createdAt)}
                     </p>
-                    <p className="text-[#666]">{order.deliverySlot}</p>
+                    <p className="text-[#666]">{order.deliverySlot || "Standard Express"}</p>
                   </div>
 
-                  <div className="space-y-1 bg-[#FAF8F5] p-3.5 rounded-2xl border border-[#EFEAE2]">
+                  <div className="space-y-1 bg-[#FAF8F5] p-4 rounded-2xl border border-[#EFEAE2]">
                     <span className="font-serif uppercase text-[10px] text-[#888] tracking-wider block">
-                      Destination
+                      Delivery Destination
                     </span>
                     <p className="font-medium text-[#1E1E1E] truncate">
-                      {order.customer.address}
+                      {order.customer?.address || "Coimbatore Destination"}
                     </p>
-                    <p className="text-[#666]">{order.customer.city} - {order.customer.pincode}</p>
+                    <p className="text-[#666]">
+                      {order.customer?.city || "Coimbatore"} {order.customer?.pincode ? `• ${order.customer.pincode}` : ""}
+                    </p>
                   </div>
                 </div>
 
-                {/* Items Summary */}
-                <div className="pt-2">
-                  <h3 className="font-serif text-xs font-semibold text-[#1E1E1E] uppercase tracking-wider mb-2">
-                    Arrangements:
+                {/* Itemized Bouquet Arrangements */}
+                <div className="pt-1">
+                  <h3 className="font-serif text-xs font-semibold text-[#1E1E1E] uppercase tracking-wider mb-2.5">
+                    Order Creations ({order.items?.length || 0}):
                   </h3>
-                  <div className="space-y-1.5 text-xs text-[#555]">
-                    {order.items.map((it) => (
-                      <div key={it.product.id} className="flex justify-between">
-                        <span>
-                          {it.product.name} (x{it.quantity})
-                        </span>
-                        <span className="font-serif font-medium text-[#1E1E1E]">
-                          {formatPrice(it.product.price * it.quantity)}
+                  <div className="space-y-2 text-xs divide-y divide-[#F2ECE4]">
+                    {order.items?.map((it, idx) => (
+                      <div key={idx} className="pt-2 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="space-y-0.5">
+                          <span className="font-serif font-semibold text-[#1E1E1E] text-sm">
+                            {it.product?.name}
+                          </span>
+                          <span className="text-[#888] ml-2 font-mono">
+                            × {it.quantity}
+                          </span>
+
+                          {/* Flower Count & Color Tags */}
+                          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                            {it.selectedFlowerCount && (
+                              <span className="inline-block px-2 py-0.5 rounded-md bg-[#FAF8F5] border border-[#EFEAE2] text-[10px] text-[#1E1E1E] font-medium">
+                                💐 {it.selectedFlowerCount} Flowers
+                              </span>
+                            )}
+                            {it.selectedColor && (
+                              <span className="inline-block px-2 py-0.5 rounded-md bg-[#FAF8F5] border border-[#EFEAE2] text-[10px] text-[#555]">
+                                Color: {it.selectedColor}
+                              </span>
+                            )}
+                          </div>
+
+                          {it.customColorNote && (
+                            <p className="text-[11px] text-[#555] bg-[#FAF8F5] p-2 rounded-xl mt-1 border border-[#EFEAE2]">
+                              <strong className="text-[#1E1E1E]">Custom Note:</strong> {it.customColorNote}
+                            </p>
+                          )}
+
+                          {it.giftMessage && (
+                            <p className="text-[11px] text-[#E10600] italic mt-1">
+                              Calligraphy Card: &ldquo;{it.giftMessage}&rdquo;
+                            </p>
+                          )}
+                        </div>
+
+                        <span className="font-serif font-bold text-sm text-[#1E1E1E] shrink-0 self-end sm:self-auto">
+                          {formatPrice((it.tierPrice || it.product?.price || 0) * it.quantity)}
                         </span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Total & Action Footer */}
-                <div className="pt-4 border-t border-[#EFEAE2] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                {/* Total & Multi-Feature Actions Footer */}
+                <div className="pt-4 border-t border-[#EFEAE2] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex items-baseline gap-2">
                     <span className="text-xs uppercase font-serif text-[#888]">
                       Total:
                     </span>
-                    <span className="font-serif text-xl font-bold text-[#E10600]">
-                      {formatPrice(order.items.reduce((s, it) => s + it.product.price * it.quantity, 0))}
+                    <span className="font-serif text-2xl font-bold text-[#E10600]">
+                      {formatPrice(
+                        order.totalAmount ||
+                          order.items?.reduce(
+                            (s, it) => s + (it.tierPrice || it.product?.price || 0) * it.quantity,
+                            0
+                          ) ||
+                          0
+                      )}
                     </span>
                     <span className="text-[11px] text-[#059669] font-sans">
-                      (Zero charge online)
+                      (Zero upfront charge • Cash/UPI on Delivery)
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                  {/* Customer Order Features: Reorder, Print, WhatsApp */}
+                  <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => handleReorder(order)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FAF8F5] hover:bg-[#EFEAE2] border border-[#EFEAE2] rounded-full text-xs font-serif font-medium text-[#1E1E1E] transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-[#E10600]" />
+                      <span>{reorderSuccess === order.reference ? "Added to Cart!" : "Reorder"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handlePrintReceipt}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FAF8F5] hover:bg-[#EFEAE2] border border-[#EFEAE2] rounded-full text-xs font-serif font-medium text-[#1E1E1E] transition-colors cursor-pointer"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-[#555]" />
+                      <span>Print Receipt</span>
+                    </button>
+
                     <a
-                      href={`https://wa.me/919876543210?text=${whatsappMessage}`}
+                      href={`https://wa.me/917708354636?text=${whatsappMessage}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#25D366] hover:bg-[#1EBE5D] text-white rounded-full text-xs font-serif uppercase tracking-wider font-semibold transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-full text-xs font-serif uppercase tracking-wider font-semibold transition-colors shadow-2xs"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
-                      <span>WhatsApp</span>
+                      <span>WhatsApp Concierge</span>
                     </a>
-
-                    <Link
-                      href={`/order/lookup?ref=${order.reference}`}
-                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-5 py-2 bg-[#1E1E1E] hover:bg-[#E10600] text-white rounded-full text-xs font-serif uppercase tracking-wider font-semibold transition-all shadow-2xs"
-                    >
-                      <span>Track</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
                   </div>
                 </div>
               </div>

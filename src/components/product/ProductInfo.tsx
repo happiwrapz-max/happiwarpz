@@ -2,60 +2,123 @@
 
 import { useState, useMemo } from "react";
 import { formatPrice } from "@/lib/utils";
-import { Product } from "@/lib/store/types";
+import { Product, FlowerCountTier } from "@/lib/store/types";
 import { useBagStore } from "@/lib/store/useBagStore";
 import {
   Star,
   ShieldCheck,
   Clock,
   Check,
-  Truck,
   MessageSquare,
+  Sparkles,
   ChevronDown,
-  Info,
-  Gift
+  AlertCircle,
+  Palette,
+  Gift,
 } from "lucide-react";
-import { RibbonEmblem } from "@/components/ui/RibbonEmblem";
 
 interface ProductInfoProps {
   product: Product;
 }
 
-const STEM_SIZES = [
-  { id: "small", label: "Small (6 Roses)", subtitle: "Charming", priceDelta: -400 },
-  { id: "medium", label: "Medium (12 Roses)", subtitle: "Signature", priceDelta: 0, isDefault: true },
-  { id: "large", label: "Large (24 Roses)", subtitle: "Grand", priceDelta: 1000 },
-  { id: "atelier", label: "Atelier (50 Roses)", subtitle: "Ultra Luxury", priceDelta: 2600 },
+interface ColorPreset {
+  id: string;
+  name: string;
+  hex: string;
+  border?: boolean;
+  isGradient?: boolean;
+}
+
+const PRESET_FLOWER_COLORS: ColorPreset[] = [
+  { id: "red", name: "Red", hex: "#B91C1C" },
+  { id: "pink", name: "Pink", hex: "#F472B6" },
+  { id: "white", name: "White", hex: "#FAF9F6", border: true },
+  { id: "yellow", name: "Yellow", hex: "#EAB308" },
+  { id: "purple", name: "Purple", hex: "#9333EA" },
+  { id: "blue", name: "Blue", hex: "#2563EB" },
+  { id: "orange", name: "Orange", hex: "#EA580C" },
+  { id: "other", name: "Other", hex: "linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 50%, #FFE66D 100%)", isGradient: true },
 ];
 
-const OCCASION_TEMPLATES = [
-  { label: "Anniversary", text: "Happy Anniversary to the love of my life! Forever & always." },
-  { label: "Birthday", text: "Wishing you the happiest birthday filled with joy and blooms!" },
-  { label: "With Love", text: "Just a reminder of how deeply cherished and adored you are." },
-  { label: "Congratulations", text: "Heartiest congratulations on your remarkable milestone!" },
+const PRESET_RIBBON_COLORS = [
+  "Gold Satin",
+  "Crimson Red",
+  "Champagne Ivory",
+  "Emerald Green",
+  "Midnight Black",
+  "Rose Pink",
 ];
 
 export default function ProductInfo({ product }: ProductInfoProps) {
-  const [selectedSize, setSelectedSize] = useState("medium");
+  // Flower count & pricing tiers
+  const tiers: FlowerCountTier[] = useMemo(() => {
+    if (product.flowerTiers && product.flowerTiers.length > 0) {
+      return product.flowerTiers;
+    }
+    const base = product.price || 1499;
+    return [
+      { id: "tier-1", count: 1, label: "Single Bloom", price: 299 },
+      { id: "tier-3", count: 3, label: "Petite (3 Stems)", price: Math.round((base * 0.45) / 10) * 10 || 599 },
+      { id: "tier-5", count: 5, label: "Classic (5 Stems)", price: Math.round((base * 0.65) / 10) * 10 || 899 },
+      { id: "tier-7", count: 7, label: "Signature (7 Stems)", price: Math.round((base * 0.85) / 10) * 10 || 1199 },
+      { id: "tier-10", count: 10, label: "Prestige (10 Stems)", price: base, isDefault: true },
+      { id: "tier-12", count: 12, label: "Dozen (12 Stems)", price: Math.round((base * 1.2) / 10) * 10 || 1799 },
+      { id: "tier-15", count: 15, label: "Luxury (15 Stems)", price: Math.round((base * 1.45) / 10) * 10 || 2199 },
+      { id: "tier-20", count: 20, label: "Royal (20 Stems)", price: Math.round((base * 1.9) / 10) * 10 || 2899 },
+    ];
+  }, [product.flowerTiers, product.price]);
+
+  // Find default tier or fallback to 10 stems
+  const defaultTier = tiers.find((t) => t.isDefault) || tiers[Math.min(4, tiers.length - 1)] || tiers[0];
+  const [selectedTierId, setSelectedTierId] = useState<string>(defaultTier.id);
+
+  // Active tier & pricing
+  const activeTier = tiers.find((t) => t.id === selectedTierId) || tiers[0];
+  const unitPrice = activeTier.price;
+
+  // Customization State
+  const [selectedColorPreset, setSelectedColorPreset] = useState<string>("Red");
+  const [customColorName, setCustomColorName] = useState<string>("");
+  const [selectedRibbonColor, setSelectedRibbonColor] = useState<string>("Gold Satin");
+  const [personalizationMessage, setPersonalizationMessage] = useState<string>("");
+  const [specialInstructions, setSpecialInstructions] = useState<string>("");
+  const [showAdvancedNotes, setShowAdvancedNotes] = useState<boolean>(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Quantity & Bag
   const [quantity, setQuantity] = useState(1);
-  const [giftMessage, setGiftMessage] = useState("");
-  const [ribbonText, setRibbonText] = useState("");
-  const [showRibbonInput, setShowRibbonInput] = useState(false);
   const [added, setAdded] = useState(false);
-  const [openAccordion, setOpenAccordion] = useState<string | null>("care");
 
   const addItem = useBagStore((s) => s.addItem);
-  const openDrawer = useBagStore((s) => s.openDrawer);
-
-  const activeSize = STEM_SIZES.find((s) => s.id === selectedSize) || STEM_SIZES[1];
-  const unitPrice = Math.max(499, product.price + activeSize.priceDelta);
   const totalPrice = unitPrice * quantity;
 
-  const handleAddToBag = () => {
-    const fullGiftNotes = [
-      `Size: ${activeSize.label}`,
-      ribbonText.trim() ? `Ribbon Calligraphy: "${ribbonText.trim()}"` : null,
-      giftMessage.trim() ? `Card: "${giftMessage.trim()}"` : null,
+  // Handle Add To Cart with validation
+  const handleAddToBag = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    setValidationError(null);
+
+    if (!selectedColorPreset) {
+      setValidationError("Please select a flower colour for your bouquet.");
+      return;
+    }
+
+    if (selectedColorPreset === "Other" && !customColorName.trim()) {
+      setValidationError("Please enter your custom colour shade in the box below.");
+      return;
+    }
+
+    const effectiveColor =
+      selectedColorPreset === "Other"
+        ? `Custom: ${customColorName.trim()}`
+        : customColorName.trim()
+        ? `${selectedColorPreset} (${customColorName.trim()})`
+        : selectedColorPreset;
+
+    const giftNotesSummary = [
+      `${activeTier.count} Flowers Bouquet`,
+      `Color: ${effectiveColor}`,
+      `Ribbon: ${selectedRibbonColor}`,
+      personalizationMessage.trim() ? `Card: "${personalizationMessage.trim()}"` : null,
+      specialInstructions.trim() ? `Note: ${specialInstructions.trim()}` : null,
     ]
       .filter(Boolean)
       .join(" • ");
@@ -66,91 +129,154 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         price: unitPrice,
       },
       quantity,
-      fullGiftNotes || undefined
+      giftNotesSummary || undefined,
+      {
+        selectedFlowerCount: activeTier.count,
+        selectedColor: effectiveColor,
+        customColorNote: customColorName.trim() || undefined,
+        ribbonColor: selectedRibbonColor,
+        personalizationMessage: personalizationMessage.trim() || undefined,
+        specialInstructions: specialInstructions.trim() || undefined,
+        tierPrice: unitPrice,
+      }
     );
+
+    // Parabolic cart animation trigger
+    if (typeof window !== "undefined") {
+      const rect = e?.currentTarget?.getBoundingClientRect();
+      window.dispatchEvent(
+        new CustomEvent("happiwrapz:product-picked", {
+          detail: {
+            product: { ...product, price: unitPrice },
+            sourceRect: rect,
+          },
+        })
+      );
+    }
 
     setAdded(true);
     setTimeout(() => {
       setAdded(false);
-    }, 1200);
+    }, 1400);
   };
 
   const whatsappInquiryUrl = useMemo(() => {
-    const msg = `Hello Happiwrapz! I am viewing "${product.name}" (${activeSize.label}) at ₹${totalPrice}. I have a query regarding customization and same-day delivery availability.`;
-    return `https://wa.me/919876543210?text=${encodeURIComponent(msg)}`;
-  }, [product.name, activeSize.label, totalPrice]);
+    const effectiveColor =
+      selectedColorPreset === "Other"
+        ? `Custom: ${customColorName.trim() || "Bespoke"}`
+        : customColorName.trim()
+        ? `${selectedColorPreset} (${customColorName.trim()})`
+        : selectedColorPreset;
+
+    const msg = `Hello Happiwrapz! I would like to order "${product.name}":
+• Bouquet Size: ${activeTier.count} Flowers (${formatPrice(totalPrice)})
+• Flower Colour: ${effectiveColor}
+• Ribbon: ${selectedRibbonColor}
+${personalizationMessage.trim() ? `• Card Message: "${personalizationMessage.trim()}"\n` : ""}${specialInstructions.trim() ? `• Instructions: ${specialInstructions.trim()}\n` : ""}Please confirm availability & delivery in Coimbatore.`;
+    return `https://wa.me/917708354636?text=${encodeURIComponent(msg)}`;
+  }, [product.name, activeTier.count, totalPrice, selectedColorPreset, customColorName, selectedRibbonColor, personalizationMessage, specialInstructions]);
 
   return (
-    <div className="flex flex-col justify-center max-w-xl w-full space-y-6">
-      {/* Category & Verified Reviews Header */}
+    <div className="flex flex-col max-w-xl w-full space-y-4">
+      {/* ── Category & Live Review Jump Link ── */}
       <div className="flex items-center justify-between pb-2 border-b border-[#EFEAE2]">
-        <span className="text-[11px] font-serif uppercase tracking-[0.2em] text-[#E10600] font-semibold">
-          {product.category || "Handcrafted Ribbon Flowers"}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-serif uppercase tracking-[0.2em] text-[#E10600] font-semibold">
+            {product.category || "Handcrafted Ribbon Flowers"}
+          </span>
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="text-[10px] text-emerald-700 font-medium">In Stock • Coimbatore Atelier</span>
+        </div>
 
-        {/* 5 Star Rating matching sample */}
-        <div className="flex items-center gap-1.5">
+        <a
+          href="#reviews"
+          className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+        >
           <div className="flex items-center text-[#E5A83B]">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-3.5 h-3.5 fill-[#E5A83B]" />
+              <Star key={i} className="w-3 h-3 fill-[#E5A83B]" />
             ))}
           </div>
-          <span className="text-xs font-semibold text-[#1E1E1E]">4.9</span>
-          <span className="text-xs text-[#777] font-sans">(124 reviews)</span>
-        </div>
+          <span className="text-xs font-semibold text-[#1E1E1E]">
+            {product.rating ? Number(product.rating).toFixed(1) : "5.0"}
+          </span>
+          <span className="text-[11px] text-[#777] font-sans underline underline-offset-2">
+            ({product.reviewsCount || 12} reviews)
+          </span>
+        </a>
       </div>
 
-      {/* Product Title */}
+      {/* ── Product Title & Craftsmanship Note ── */}
       <div>
-        <h1 className="font-serif text-3xl sm:text-4xl text-[#1E1E1E] font-normal leading-tight">
+        <h1 className="font-serif text-2xl sm:text-3xl text-[#1E1E1E] font-normal leading-tight">
           {product.name}
         </h1>
-        <p className="text-xs sm:text-sm text-[#666] leading-relaxed mt-2 font-sans">
+        <p className="text-xs text-[#555] leading-relaxed mt-1 font-sans line-clamp-2">
           {product.description}
         </p>
       </div>
 
-      {/* Dynamic Price Display */}
-      <div className="flex items-baseline gap-3">
-        <span className="text-3xl sm:text-4xl font-serif font-bold text-[#E10600]">
-          {formatPrice(unitPrice)}
-        </span>
-        <span className="text-base font-serif text-[#999] line-through">
-          {formatPrice(unitPrice + 350)}
-        </span>
-        <span className="px-2.5 py-0.5 rounded-full bg-[#E10600]/10 text-[#E10600] text-xs font-sans font-medium">
-          Save ₹350
-        </span>
+      {/* ── Dynamic Price Display Card ── */}
+      <div className="flex items-baseline justify-between p-3.5 bg-[#FAF8F5] rounded-2xl border border-[#EFEAE2]">
+        <div>
+          <span className="text-[11px] uppercase font-serif tracking-wider text-[#777] block mb-0.5">
+            Price for {activeTier.count} {activeTier.count === 1 ? "Flower" : "Flowers"}:
+          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-serif font-bold text-[#E10600]">
+              {formatPrice(unitPrice)}
+            </span>
+            <span className="text-xs font-serif text-[#999] line-through">
+              {formatPrice(unitPrice + Math.round(unitPrice * 0.25))}
+            </span>
+            <span className="px-2 py-0.2 rounded-full bg-[#E10600]/10 text-[#E10600] text-[10px] font-sans font-semibold">
+              Save {formatPrice(Math.round(unitPrice * 0.25))}
+            </span>
+          </div>
+        </div>
+
+        <div className="text-right">
+          <span className="text-[9px] uppercase font-mono tracking-wider text-[#888] block">Payment Model</span>
+          <span className="text-xs font-bold text-emerald-700">₹0 Upfront Required</span>
+        </div>
       </div>
 
-      {/* ── SIZE / STEM COUNT SELECTOR (ELEVATED FROM SAMPLE) ── */}
-      <div className="space-y-2.5 pt-1">
+      {/* ── FLOWER COUNT SELECTOR (Clean 4-column compact pills) ── */}
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-serif uppercase tracking-wider font-semibold text-[#1E1E1E]">
-            Size / Stem Count:
+          <label className="text-xs font-serif uppercase tracking-wider font-semibold text-[#1E1E1E] flex items-center gap-1.5">
+            <Sparkles className="w-3 h-3 text-[#E10600]" />
+            <span>Select Bouquet Size:</span>
           </label>
-          <span className="text-xs text-[#E10600] font-medium font-sans">
-            {activeSize.label} selected
+          <span className="text-xs text-[#E10600] font-semibold font-serif">
+            {activeTier.count} Flowers • {formatPrice(activeTier.price)}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {STEM_SIZES.map((size) => {
-            const isSelected = selectedSize === size.id;
+        <div className="grid grid-cols-4 gap-1.5">
+          {tiers.map((tier) => {
+            const isSelected = selectedTierId === tier.id;
             return (
               <button
-                key={size.id}
+                key={tier.id}
                 type="button"
-                onClick={() => setSelectedSize(size.id)}
-                className={`py-2.5 px-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                onClick={() => setSelectedTierId(tier.id)}
+                className={`p-2 rounded-xl border text-center transition-all cursor-pointer relative ${
                   isSelected
-                    ? "bg-[#FEE2E2] border-[#E10600] text-[#E10600] ring-1 ring-[#E10600]/30 font-semibold shadow-xs"
-                    : "bg-white border-[#EFEAE2] text-[#555] hover:border-[#BBB] hover:bg-[#FAF8F5]"
+                    ? "bg-[#FEE2E2] border-[#E10600] text-[#1E1E1E] ring-1 ring-[#E10600]/40 shadow-2xs"
+                    : "bg-white border-[#EFEAE2] text-[#555] hover:border-[#D1C7BD] hover:bg-[#FAF8F5]"
                 }`}
               >
-                <div className="text-xs font-medium truncate">{size.label}</div>
-                <div className="text-[10px] text-[#888] font-sans mt-0.5">
-                  {size.subtitle}
+                {tier.isDefault && (
+                  <span className="absolute -top-1.5 right-1 px-1 py-0.1 rounded-full bg-[#E10600] text-white text-[8px] font-serif uppercase tracking-wider">
+                    Popular
+                  </span>
+                )}
+                <div className="font-serif font-bold text-xs text-[#1E1E1E]">
+                  {tier.count} Stems
+                </div>
+                <div className="text-[11px] font-semibold text-[#E10600]">
+                  {formatPrice(tier.price)}
                 </div>
               </button>
             );
@@ -158,120 +284,179 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         </div>
       </div>
 
-      {/* ── COMPLIMENTARY WAX-SEALED GIFT MESSAGE (ELEVATED FROM SAMPLE) ── */}
-      <div className="space-y-2.5 pt-2">
+      {/* ── FLOWER COLOUR CUSTOMIZATION SWATCHES ── */}
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-xs font-serif uppercase tracking-wider font-semibold text-[#1E1E1E] flex items-center gap-1.5">
-            <Gift className="w-3.5 h-3.5 text-[#E10600]" />
-            <span>Add Gift Message (Complimentary)</span>
+            <Palette className="w-3 h-3 text-[#E10600]" />
+            <span>Flower Colour:</span>
           </label>
-          <span className="text-[10px] text-[#059669] font-medium">
-            Handwritten & Wax-Sealed
+          <span className="text-xs text-[#E10600] font-semibold font-serif">
+            {selectedColorPreset}
           </span>
         </div>
 
-        {/* Quick Occasion Prompt Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {OCCASION_TEMPLATES.map((tmpl) => (
-            <button
-              key={tmpl.label}
-              type="button"
-              onClick={() => setGiftMessage(tmpl.text)}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-[#FAF8F5] border border-[#EFEAE2] text-[#666] hover:text-[#E10600] hover:border-[#E10600]/40 hover:bg-[#FEE2E2]/50 transition-colors shrink-0 cursor-pointer"
-            >
-              + {tmpl.label}
-            </button>
-          ))}
+        {/* 8 Preset Swatches */}
+        <div className="grid grid-cols-8 gap-1.5">
+          {PRESET_FLOWER_COLORS.map((color) => {
+            const isSelected = selectedColorPreset === color.name;
+            return (
+              <button
+                key={color.id}
+                type="button"
+                onClick={() => {
+                  setSelectedColorPreset(color.name);
+                  setValidationError(null);
+                }}
+                className={`flex flex-col items-center justify-center p-1.5 rounded-xl border transition-all cursor-pointer ${
+                  isSelected
+                    ? "bg-[#FFF5F5] border-[#E10600] ring-1 ring-[#E10600]/40 shadow-2xs"
+                    : "bg-white border-[#EFEAE2] hover:border-[#CCC]"
+                }`}
+              >
+                <span
+                  className={`w-5 h-5 rounded-full mb-1 shadow-2xs ${
+                    color.border ? "border border-[#DDD]" : ""
+                  }`}
+                  style={{
+                    background: color.isGradient ? color.hex : undefined,
+                    backgroundColor: !color.isGradient ? color.hex : undefined,
+                  }}
+                />
+                <span className="text-[9px] font-sans font-medium text-[#1E1E1E] truncate max-w-full">
+                  {color.name}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className="relative">
-          <textarea
-            value={giftMessage}
-            onChange={(e) => setGiftMessage(e.target.value)}
-            placeholder="Write your heartfelt message here... (Our atelier artist will pen this in gold calligraphy)"
-            maxLength={250}
-            rows={3}
-            className="w-full text-xs p-3.5 bg-white border border-[#E5E0D8] rounded-2xl text-[#1E1E1E] placeholder:text-[#999] focus:outline-hidden focus:border-[#E10600] focus:ring-1 focus:ring-[#E10600] resize-none shadow-2xs"
+        {/* Custom colour text box */}
+        <input
+          type="text"
+          value={customColorName}
+          onChange={(e) => {
+            setCustomColorName(e.target.value);
+            setValidationError(null);
+          }}
+          placeholder={
+            selectedColorPreset === "Other"
+              ? "Type your required custom color or blend (e.g. 5 Red + 5 White)... *"
+              : "Optional: Type custom shade or mix request (e.g. Pastel Peach)..."
+          }
+          className={`w-full text-xs p-2.5 bg-white border rounded-xl text-[#1E1E1E] outline-none transition-all ${
+            selectedColorPreset === "Other" && !customColorName.trim()
+              ? "border-[#E10600] bg-[#FFF9F9] focus:ring-1 focus:ring-[#E10600]"
+              : "border-[#E5E0D8] focus:border-[#E10600]"
+          }`}
+        />
+      </div>
+
+      {/* ── RIBBON ACCENT & GIFT CARD CUSTOMIZATION ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        {/* Ribbon Selection */}
+        <div className="space-y-1">
+          <label className="text-[11px] font-serif uppercase tracking-wider font-semibold text-[#1E1E1E] flex items-center gap-1">
+            <Gift className="w-3 h-3 text-[#E10600]" />
+            <span>Ribbon Accent:</span>
+          </label>
+          <select
+            value={selectedRibbonColor}
+            onChange={(e) => setSelectedRibbonColor(e.target.value)}
+            className="w-full text-xs p-2.5 bg-white border border-[#E5E0D8] rounded-xl text-[#1E1E1E] outline-none cursor-pointer focus:border-[#E10600]"
+          >
+            {PRESET_RIBBON_COLORS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Free Calligraphy Card Message */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-serif uppercase tracking-wider font-semibold text-[#1E1E1E]">
+              Free Card Message:
+            </label>
+            <span className="text-[9px] text-[#888]">Optional</span>
+          </div>
+          <input
+            type="text"
+            value={personalizationMessage}
+            onChange={(e) => setPersonalizationMessage(e.target.value)}
+            placeholder="e.g. 'Happy Birthday Priya! Love, Rahul'"
+            maxLength={120}
+            className="w-full text-xs p-2.5 bg-white border border-[#E5E0D8] rounded-xl text-[#1E1E1E] placeholder:text-[#999] focus:outline-hidden focus:border-[#E10600]"
           />
-          <span className="absolute bottom-2.5 right-3 text-[10px] text-[#999] font-sans">
-            {giftMessage.length}/250
-          </span>
         </div>
       </div>
 
-      {/* Satin Ribbon Custom Calligraphy Toggle */}
-      <div className="pt-1">
-        {!showRibbonInput ? (
-          <button
-            type="button"
-            onClick={() => setShowRibbonInput(true)}
-            className="text-xs font-serif tracking-wide text-[#E10600] hover:text-[#C20500] underline underline-offset-4 flex items-center gap-1.5 cursor-pointer"
-          >
-            <RibbonEmblem className="w-3.5 h-3.5 text-[#E10600]" />
-            <span>+ Add personalized gold foil inscription on satin ribbon</span>
-          </button>
-        ) : (
-          <div className="p-3.5 bg-[#FAF8F5] rounded-2xl border border-[#EFEAE2] space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-serif font-semibold text-[#1E1E1E]">
-                Ribbon Gold Foil Calligraphy:
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowRibbonInput(false);
-                  setRibbonText("");
-                }}
-                className="text-[10px] text-[#E10600] hover:underline cursor-pointer"
-              >
-                Remove
-              </button>
-            </div>
-            <input
-              type="text"
-              value={ribbonText}
-              onChange={(e) => setRibbonText(e.target.value)}
-              placeholder="e.g., Happy 10th Anniversary My Love"
-              maxLength={60}
-              className="w-full text-xs px-3 py-2 bg-white border border-[#EFEAE2] rounded-xl focus:outline-hidden focus:border-[#E10600]"
+      {/* Optional Atelier Instructions Toggle */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowAdvancedNotes(!showAdvancedNotes)}
+          className="text-[11px] text-[#777] hover:text-[#E10600] font-sans flex items-center gap-1 cursor-pointer"
+        >
+          <span>{showAdvancedNotes ? "− Hide special atelier instructions" : "+ Add special delivery or tailoring instructions"}</span>
+        </button>
+
+        {showAdvancedNotes && (
+          <div className="mt-2">
+            <textarea
+              value={specialInstructions}
+              onChange={(e) => setSpecialInstructions(e.target.value)}
+              placeholder="Special wrap preference, delivery time slot, or bespoke packaging requests in Coimbatore..."
+              rows={2}
+              maxLength={250}
+              className="w-full text-xs p-2.5 bg-white border border-[#E5E0D8] rounded-xl text-[#1E1E1E] placeholder:text-[#999] focus:outline-hidden focus:border-[#E10600] resize-none"
             />
           </div>
         )}
       </div>
 
-      {/* ── QUANTITY STEPPER & ADD TO CART CTA (ELEVATED FROM SAMPLE) ── */}
-      <div className="flex items-center gap-3 pt-2">
-        {/* Stepper matching sample [- 1 +] */}
-        <div className="inline-flex items-center border border-[#E5E0D8] rounded-full h-12 px-2 bg-[#FAF8F5] shadow-2xs">
+      {/* Validation Error Alert */}
+      {validationError && (
+        <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs text-red-700 animate-shake">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <span>{validationError}</span>
+        </div>
+      )}
+
+      {/* ── QUANTITY STEPPER & PRIMARY ADD TO CART CTA ── */}
+      <div className="flex items-center gap-2.5 pt-1">
+        {/* Quantity Stepper */}
+        <div className="inline-flex items-center border border-[#E5E0D8] rounded-full h-11 px-1.5 bg-[#FAF8F5] shadow-2xs shrink-0">
           <button
             type="button"
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-[#1E1E1E] hover:bg-black/5 transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold text-[#1E1E1E] hover:bg-black/5 transition-colors cursor-pointer"
             aria-label="Decrease quantity"
           >
             -
           </button>
-          <span className="w-8 text-center font-serif text-sm font-bold text-[#1E1E1E]">
+          <span className="w-7 text-center font-serif text-xs font-bold text-[#1E1E1E]">
             {quantity}
           </span>
           <button
             type="button"
             onClick={() => setQuantity(quantity + 1)}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-[#1E1E1E] hover:bg-black/5 transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold text-[#1E1E1E] hover:bg-black/5 transition-colors cursor-pointer"
             aria-label="Increase quantity"
           >
             +
           </button>
         </div>
 
-        {/* Primary CTA Button in True Red #E10600 */}
+        {/* Primary CTA Button */}
         <button
           type="button"
           onClick={handleAddToBag}
-          className={`flex-1 h-12 rounded-xl text-xs sm:text-sm font-serif uppercase tracking-wider font-semibold flex items-center justify-center gap-2 transition-all duration-300 shadow-sm cursor-pointer ${
+          className={`flex-1 h-11 rounded-xl text-xs font-serif uppercase tracking-wider font-semibold flex items-center justify-center gap-2 transition-all duration-300 shadow-sm cursor-pointer ${
             added
-              ? "bg-[#059669] text-white"
-              : "bg-[#E10600] hover:bg-[#C20500] text-white hover:shadow-md"
+              ? "bg-[#059669] text-white product-pick-pulse scale-[1.01]"
+              : "bg-[#E10600] hover:bg-[#C20500] text-white hover:shadow-md active:scale-95"
           }`}
         >
           {added ? (
@@ -290,87 +475,27 @@ export default function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       {/* Trust & Dispatch Reassurance Banner */}
-      <div className="p-3.5 bg-[#FAF8F5] border border-[#EFEAE2] rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#555]">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-[#E10600] shrink-0" />
-          <span>
-            <strong className="text-[#1E1E1E] font-medium">Bangalore Express:</strong> Same-day 2-hr delivery available.
-          </span>
+      <div className="p-3 bg-[#FAF8F5] border border-[#EFEAE2] rounded-xl flex items-center justify-between text-[11px] text-[#555]">
+        <div className="flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5 text-[#E10600] shrink-0" />
+          <span>Same-day Coimbatore express available.</span>
         </div>
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-[#059669] shrink-0" />
+        <div className="flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#059669] shrink-0" />
           <span className="text-[#059669] font-medium">Zero Online Upfront Pay</span>
         </div>
       </div>
 
-      {/* Collapsible Accordions for Botanical Specs & Care */}
-      <div className="pt-2 border-t border-[#EFEAE2] space-y-2">
-        {/* Accordion 1: Ribbon Flower Care & Keepsake */}
-        <div className="border border-[#EFEAE2] rounded-2xl overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setOpenAccordion(openAccordion === "care" ? null : "care")}
-            className="w-full px-4 py-3 bg-[#FAF8F5] flex items-center justify-between text-xs font-serif font-semibold text-[#1E1E1E] cursor-pointer"
-          >
-            <span>Handcrafted Ribbon Flower & Keepsake Care Guide</span>
-            <ChevronDown
-              className={`w-4 h-4 text-[#888] transition-transform ${
-                openAccordion === "care" ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-          {openAccordion === "care" && (
-            <div className="p-4 bg-white text-xs text-[#666] space-y-2 leading-relaxed">
-              <p>
-                • <strong>Forever Longevity:</strong> 100% handcrafted everlasting satin ribbon flowers that never wilt, dry up, or fade.
-              </p>
-              <p>
-                • <strong>Zero Water Required:</strong> Never water or refrigerate! Your ribbon blooms are completely maintenance-free.
-              </p>
-              <p>
-                • <strong>Keepsake Care:</strong> Keep in a dry area away from direct moisture. If dusty, gently dust the satin petals with a soft dry brush.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Accordion 2: Luxury Packaging */}
-        <div className="border border-[#EFEAE2] rounded-2xl overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setOpenAccordion(openAccordion === "packaging" ? null : "packaging")}
-            className="w-full px-4 py-3 bg-[#FAF8F5] flex items-center justify-between text-xs font-serif font-semibold text-[#1E1E1E] cursor-pointer"
-          >
-            <span>Keepsake Velvet Box & Ribbon Specs</span>
-            <ChevronDown
-              className={`w-4 h-4 text-[#888] transition-transform ${
-                openAccordion === "packaging" ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-          {openAccordion === "packaging" && (
-            <div className="p-4 bg-white text-xs text-[#666] space-y-2 leading-relaxed">
-              <p>
-                • <strong>Keepsake Box:</strong> Rigid circular velvet presentation cylinder with gold-embossed brand seal. Reusable for jewelry and watches.
-              </p>
-              <p>
-                • <strong>Ribbon:</strong> 38mm double-faced Italian satin ribbon with hand-tied couture bow.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Direct WhatsApp Concierge CTA */}
-      <div className="pt-1 text-center">
+      {/* WhatsApp Concierge direct link */}
+      <div className="pt-0.5 text-center">
         <a
           href={whatsappInquiryUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-xs text-[#25D366] hover:text-[#20bd5a] font-medium transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-[#25D366] hover:text-[#20bd5a] font-medium transition-colors"
         >
           <MessageSquare className="w-3.5 h-3.5" />
-          <span>Have a custom stem count or hotel room surprise? Chat on WhatsApp</span>
+          <span>Need custom stems or instant delivery? Chat on WhatsApp</span>
         </a>
       </div>
     </div>

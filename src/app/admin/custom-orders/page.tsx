@@ -65,7 +65,7 @@ export default function AdminCustomOrdersPage() {
         <div>
           <div className="inline-flex items-center gap-2 text-xs font-serif uppercase tracking-[0.2em] text-[#E10600] font-semibold mb-1">
             <RibbonEmblem className="w-3.5 h-3.5" />
-            <span>Bespoke Atelier Commissions</span>
+            <span>Bespoke Custom Commissions</span>
           </div>
           <h1 className="font-serif text-3xl sm:text-4xl text-[#1E1E1E] font-normal">
             Custom Orders & Quotations

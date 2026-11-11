@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getProductById, updateProduct, deleteProduct } from "@/lib/server/db";
+import { redisCache } from "@/lib/server/redis";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(
   _request: NextRequest,
@@ -7,7 +12,11 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const product = await getProductById(id);
+    const product = await redisCache.getOrSet(
+      `catalog:product:${id}`,
+      () => getProductById(id),
+      120
+    );
 
     if (!product) {
       return NextResponse.json(
@@ -42,6 +51,18 @@ export async function PUT(
       );
     }
 
+    // Invalidate product & catalog cache
+    await redisCache.delPattern("catalog:*");
+
+    try {
+      revalidatePath("/catalog");
+      revalidatePath("/shop");
+      revalidatePath("/");
+      revalidatePath(`/product/${id}`);
+      if (updated.slug) revalidatePath(`/product/${updated.slug}`);
+      revalidatePath("/admin/products");
+    } catch {}
+
     return NextResponse.json({ success: true, product: updated });
   } catch (error) {
     console.error("API PUT /api/products/[id] error:", error);
@@ -66,6 +87,16 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Invalidate product & catalog cache
+    await redisCache.delPattern("catalog:*");
+
+    try {
+      revalidatePath("/catalog");
+      revalidatePath("/shop");
+      revalidatePath("/");
+      revalidatePath("/admin/products");
+    } catch {}
 
     return NextResponse.json({
       success: true,

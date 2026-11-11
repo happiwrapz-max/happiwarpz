@@ -57,13 +57,13 @@ function DashboardContent({
                   <span>Store Owner Access</span>
                 </div>
                 <p className="text-[11px] text-[#666] mb-3">
-                  Switch to atelier management portal.
+                  Switch to store management portal.
                 </p>
                 <Link
                   href="/admin"
                   className="block w-full text-center py-2 rounded-xl bg-[#1E1E1E] text-white text-[11px] font-serif font-semibold uppercase tracking-wider hover:bg-[#E10600] transition-colors"
                 >
-                  Go to Atelier Admin
+                  Go to Admin Dashboard
                 </Link>
               </div>
             )}

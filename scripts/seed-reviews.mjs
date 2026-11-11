@@ -1,0 +1,168 @@
+import fs from "fs";
+import path from "path";
+
+const dbPath = path.resolve("d:/New folder/happiwrapz/.data/db.json");
+const db = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
+
+const INITIAL_PRODUCT_REVIEWS = [
+  {
+    id: "rev-001",
+    productId: "red-rose-bouquet",
+    authorName: "Ananya Ramaswamy",
+    authorEmail: "ananya.r@example.com",
+    rating: 5,
+    title: "Pure handcrafted poetry — Never wilts and looks breathtaking!",
+    comment: "The satin ribbon roses are pure perfection. They look so natural yet have a silky luxury sheen that fresh flowers simply cannot match. The handwritten wax-sealed note included was such a heartfelt touch. My husband was speechless!",
+    verifiedBuyer: true,
+    flowerCount: 12,
+    colorChosen: "Crimson Velvet Red",
+    createdAt: "2026-10-28T10:15:00.000Z",
+    helpfulCount: 14,
+  },
+  {
+    id: "rev-002",
+    productId: "red-rose-bouquet",
+    authorName: "Karthik Subramanian",
+    authorEmail: "karthik.s@example.com",
+    rating: 5,
+    title: "Zero upfront payment was so reassuring! Outstanding service.",
+    comment: "I was initially curious how the zero online payment model worked. The store owner connected with me directly on WhatsApp within 30 minutes, shared photos of the folded petals, and verified delivery timing in Coimbatore. Truly 5-star artisan care.",
+    verifiedBuyer: true,
+    flowerCount: 7,
+    colorChosen: "Crimson Velvet Red",
+    createdAt: "2026-10-22T14:30:00.000Z",
+    helpfulCount: 9,
+  },
+  {
+    id: "rev-003",
+    productId: "red-rose-bouquet",
+    authorName: "Meera Venkat",
+    authorEmail: "meera.v@example.com",
+    rating: 5,
+    title: "Exquisite craftsmanship & heirloom quality.",
+    comment: "Bought this for our 5th anniversary. Each rose has multiple tight petals with immaculate folds. One month later and it still looks as fresh as the day it arrived.",
+    verifiedBuyer: true,
+    flowerCount: 15,
+    colorChosen: "Dual-tone Crimson & Cream",
+    createdAt: "2026-10-15T09:20:00.000Z",
+    helpfulCount: 7,
+  },
+  {
+    id: "rev-004",
+    productId: "ribbon-sunflower-bouquet",
+    authorName: "Deepa Nambiar",
+    authorEmail: "deepa.n@example.com",
+    rating: 5,
+    title: "Radiant golden sunshine in ribbon form!",
+    comment: "The sunflowers brightened our entire living room. The detail on the seed center made of textured brown satin is insane. Everyone asks where we bought it.",
+    verifiedBuyer: true,
+    flowerCount: 5,
+    colorChosen: "Golden Sunflower Yellow",
+    createdAt: "2026-10-26T16:45:00.000Z",
+    helpfulCount: 11,
+  },
+  {
+    id: "rev-005",
+    productId: "ribbon-sunflower-bouquet",
+    authorName: "Arjun Krishnan",
+    authorEmail: "arjun.k@example.com",
+    rating: 5,
+    title: "Best birthday gift ever for my sister.",
+    comment: "She loves sunflowers and is allergic to pollen. Happiwrapz ribbon sunflower bouquet was literally the most thoughtful present I could find.",
+    verifiedBuyer: true,
+    flowerCount: 10,
+    colorChosen: "Golden Sunflower Yellow",
+    createdAt: "2026-10-18T11:10:00.000Z",
+    helpfulCount: 6,
+  },
+  {
+    id: "rev-006",
+    productId: "lavender-elegance",
+    authorName: "Pooja Sundaram",
+    authorEmail: "pooja.s@example.com",
+    rating: 5,
+    title: "Sophisticated, calming pastel beauty.",
+    comment: "The lavender shades paired with subtle sage accents look straight out of a Paris editorial shoot. The ribbon quality is thick and holds its form.",
+    verifiedBuyer: true,
+    flowerCount: 10,
+    colorChosen: "Royal Lavender",
+    createdAt: "2026-10-24T18:00:00.000Z",
+    helpfulCount: 8,
+  },
+  {
+    id: "rev-007",
+    productId: "glitter-rose-luxury",
+    authorName: "Divya Prakash",
+    authorEmail: "divya.p@example.com",
+    rating: 5,
+    title: "The glitter shimmer catches the light gorgeously!",
+    comment: "Pictures don't do this justice! The fine micro-glitter edging glistens under candlelight. Received so many compliments at our wedding reception table.",
+    verifiedBuyer: true,
+    flowerCount: 20,
+    colorChosen: "Glitter Red & Gold",
+    createdAt: "2026-10-29T19:30:00.000Z",
+    helpfulCount: 15,
+  },
+  {
+    id: "rev-008",
+    productId: "pink-blush-bouquet",
+    authorName: "Swetha Chandran",
+    authorEmail: "swetha.c@example.com",
+    rating: 5,
+    title: "Dreamy soft pink aesthetic.",
+    comment: "Ordered 7 flowers for my best friend's bridal shower. The Korean-style matte wrap and cascading silk ribbons made it feel ultra premium.",
+    verifiedBuyer: true,
+    flowerCount: 7,
+    colorChosen: "Rosy Blush Pink",
+    createdAt: "2026-10-27T13:40:00.000Z",
+    helpfulCount: 5,
+  },
+  {
+    id: "rev-009",
+    productId: "eternal-crimson-hamper",
+    authorName: "Manoj Balaji",
+    authorEmail: "manoj.b@example.com",
+    rating: 5,
+    title: "Complete luxury hamper package. 10/10!",
+    comment: "The hamper box came tied with a rich satin bow, scented candle, artisan chocolates and keepsake roses. Hand-delivered to our doorstep in RS Puram Coimbatore.",
+    verifiedBuyer: true,
+    flowerCount: 10,
+    colorChosen: "Crimson Velvet Red",
+    createdAt: "2026-10-25T17:15:00.000Z",
+    helpfulCount: 12,
+  },
+  {
+    id: "rev-010",
+    productId: "midnight-rose-box",
+    authorName: "Rohan Nair",
+    authorEmail: "rohan.n@example.com",
+    rating: 5,
+    title: "Modern dark luxury — Midnight Onyx is stunning.",
+    comment: "The black and crimson contrast is unbelievable. A truly unique floral statement piece.",
+    verifiedBuyer: true,
+    flowerCount: 15,
+    colorChosen: "Midnight Onyx & Crimson",
+    createdAt: "2026-10-20T21:05:00.000Z",
+    helpfulCount: 10,
+  },
+];
+
+db.reviews = INITIAL_PRODUCT_REVIEWS;
+
+// Also ensure every product has default flowerTiers if missing
+for (const p of db.products) {
+  if (!p.flowerTiers || p.flowerTiers.length === 0) {
+    const base = p.price;
+    p.flowerTiers = [
+      { id: `tier-3`, count: 3, label: "Petite Keepsake (3 Stems)", price: Math.round((base * 0.45) / 10) * 10 || 599 },
+      { id: `tier-5`, count: 5, label: "Classic Charm (5 Stems)", price: Math.round((base * 0.65) / 10) * 10 || 899 },
+      { id: `tier-7`, count: 7, label: "Signature Bouquet (7 Stems)", price: Math.round((base * 0.85) / 10) * 10 || 1199 },
+      { id: `tier-10`, count: 10, label: "Prestige Grandeur (10 Stems)", price: base, isDefault: true },
+      { id: `tier-15`, count: 15, label: "Luxury Statement (15 Stems)", price: Math.round((base * 1.45) / 10) * 10 || 2199 },
+      { id: `tier-20`, count: 20, label: "Royal Atelier (20 Stems)", price: Math.round((base * 1.9) / 10) * 10 || 2899 },
+    ];
+  }
+}
+
+fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+console.log("Successfully seeded", db.reviews.length, "reviews and flowerTiers to", db.products.length, "products!");

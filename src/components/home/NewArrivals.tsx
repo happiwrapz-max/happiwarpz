@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { RibbonEmblem } from "@/components/ui/RibbonEmblem";
+import { buildCloudinaryUrl } from "@/lib/cloudinary";
 
 interface NewArrivalsProps {
   products: Product[];
@@ -26,7 +27,7 @@ export default function NewArrivals({ products }: NewArrivalsProps) {
   const isInteracting = useRef(false);
   const manualTimeout = useRef<NodeJS.Timeout | null>(null);
   const animFrameRef = useRef<number | null>(null);
-  const lastTimeRef = useRef<number>(performance.now());
+  const lastTimeRef = useRef<number>(0);
   const scrollPosRef = useRef<number>(0);
 
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -54,9 +55,19 @@ export default function NewArrivals({ products }: NewArrivalsProps) {
     e.stopPropagation();
     addItem(product, 1);
     setAddedId(product.id);
+
+    if (typeof window !== "undefined") {
+      const rect = e.currentTarget.getBoundingClientRect();
+      window.dispatchEvent(
+        new CustomEvent("happiwrapz:product-picked", {
+          detail: { product, sourceRect: rect },
+        })
+      );
+    }
+
     setTimeout(() => {
       setAddedId(null);
-    }, 1000);
+    }, 1200);
   };
 
   // Pause interaction helper (No watchdog to forcibly interrupt users)
@@ -90,6 +101,7 @@ export default function NewArrivals({ products }: NewArrivalsProps) {
     const track = trackRef.current;
     if (!el || !track) return;
 
+    lastTimeRef.current = performance.now();
     const SPEED = 40; // px per second
 
     const step = (now: number) => {
@@ -199,13 +211,17 @@ export default function NewArrivals({ products }: NewArrivalsProps) {
             const isAdded = addedId === product.id;
             const compareAtPrice = product.price + 350;
 
-            const primaryImg = product.images[0] || "/images/products/rose-bouquet-1.jpg";
+            const primaryImg = product.images[0] || "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881756/happiwrapz/products/rose-bouquet-1.jpg";
             const secondaryImg = product.images[1] || primaryImg;
 
             return (
               <div
                 key={`${product.id}-${index}`}
-                className="group min-w-[240px] sm:min-w-[280px] md:min-w-[300px] max-w-[300px] bg-white rounded-3xl border border-[#EFEAE2] hover:border-[#E10600]/40 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col justify-between shrink-0"
+                className={`group min-w-[240px] sm:min-w-[280px] md:min-w-[300px] max-w-[300px] bg-white rounded-3xl border p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col justify-between shrink-0 ${
+                  isAdded
+                    ? "border-[#E10600] product-pick-pulse ring-2 ring-[#E10600]/30 shadow-lg"
+                    : "border-[#EFEAE2] hover:border-[#E10600]/40"
+                }`}
               >
                 <div>
                   {/* Image Container with Pure-CSS Dual Image Swap on Hover (Zero flicker) */}
@@ -215,7 +231,7 @@ export default function NewArrivals({ products }: NewArrivalsProps) {
                   >
                     {/* Primary Image */}
                     <Image
-                      src={primaryImg}
+                      src={buildCloudinaryUrl(primaryImg, { preset: "card" })}
                       alt={product.name}
                       fill
                       sizes="300px"
@@ -225,7 +241,7 @@ export default function NewArrivals({ products }: NewArrivalsProps) {
                     {/* Secondary Image Overlaid (smooth CSS fade with zero state re-renders) */}
                     {product.images[1] && (
                       <Image
-                        src={secondaryImg}
+                        src={buildCloudinaryUrl(secondaryImg, { preset: "card" })}
                         alt={`${product.name} alternate view`}
                         fill
                         sizes="300px"

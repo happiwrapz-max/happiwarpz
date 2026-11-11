@@ -1,8 +1,6 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
-import { getStorage, FirebaseStorage } from "firebase/storage";
-import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth, GoogleAuthProvider } from "firebase/auth";
+import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyCJBKG1L4qA4OlLSt8QgOnKJ5Tzjdu5_Kc",
@@ -18,26 +16,49 @@ export const firebaseConfig = {
 export const app: FirebaseApp =
   getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Firebase Core Services
-export const auth: Auth = getAuth(app);
-export const db: Firestore = getFirestore(app);
-export const storage: FirebaseStorage = getStorage(app);
+// Safe client-side Auth singleton
+let authInstance: Auth | null = null;
+
+export const getFirebaseAuth = (): Auth => {
+  if (!authInstance) {
+    authInstance = getAuth(app);
+  }
+  return authInstance;
+};
+
+// Google Provider helper
+let googleProviderInstance: GoogleAuthProvider | null = null;
+export const getGoogleProvider = (): GoogleAuthProvider => {
+  if (!googleProviderInstance) {
+    googleProviderInstance = new GoogleAuthProvider();
+    googleProviderInstance.setCustomParameters({ prompt: "select_account" });
+  }
+  return googleProviderInstance;
+};
 
 // Safe client-side analytics initialization
 let analyticsInstance: Analytics | null = null;
 
 export const getFirebaseAnalytics = async (): Promise<Analytics | null> => {
   if (typeof window === "undefined") return null;
+  // Skip analytics on admin routes, in local dev, or when offline/adblocked
+  if (
+    window.location.pathname.startsWith("/admin") ||
+    process.env.NODE_ENV === "development" ||
+    (typeof navigator !== "undefined" && !navigator.onLine)
+  ) {
+    return null;
+  }
   if (analyticsInstance) return analyticsInstance;
 
   try {
-    const supported = await isSupported();
+    const supported = await isSupported().catch(() => false);
     if (supported) {
       analyticsInstance = getAnalytics(app);
       return analyticsInstance;
     }
-  } catch (err) {
-    console.warn("Firebase Analytics initialization warning:", err);
+  } catch {
+    // Non-blocking: Gracefully ignore adblockers (Brave Shields, uBlock) or blocked googleapis
   }
   return null;
 };

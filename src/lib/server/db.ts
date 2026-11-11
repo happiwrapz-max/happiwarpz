@@ -15,9 +15,13 @@ import {
   Coupon,
   AdminNotification,
   WebsiteSettings,
+  ProductReview,
+  FlowerCountTier,
 } from "@/lib/store/types";
+import { INITIAL_PRODUCT_REVIEWS } from "@/lib/data/seedReviews";
 import { OrderStatus, generateOrderReference } from "@/lib/utils";
 import { isPostgresConfigured } from "./postgres";
+import { hashPassword } from "./security";
 import {
   ensurePostgresReady,
   pgGetProducts,
@@ -35,6 +39,10 @@ import {
   pgSaveUser,
   pgSaveContact,
   pgSaveSubscriber,
+  pgSavePayment,
+  pgSaveReturn,
+  PaymentRecord,
+  ReturnRecord,
 } from "./postgresAdapter";
 
 export interface AuditLogEntry {
@@ -69,6 +77,77 @@ export interface Subscriber {
   active: boolean;
 }
 
+
+export interface CategoryRecord {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  icon?: string;
+  featured?: boolean;
+  active: boolean;
+  displayOrder?: number;
+}
+
+export interface OccasionRecord {
+  id: string;
+  name: string;
+  headline: string;
+  recommendedSlug: string;
+  bannerImage?: string;
+  badge?: string;
+  active: boolean;
+  displayOrder?: number;
+}
+
+export const INITIAL_CATEGORIES: CategoryRecord[] = [
+  { id: "cat-1", name: "Flower Bouquet", slug: "flower-bouquet", description: "Handmade satin ribbon flower bouquets crafted to last forever", active: true, featured: true, icon: "🌹" },
+  { id: "cat-2", name: "Gift Box", slug: "gift-box", description: "Luxury velvet and ribbon blossom keepsake gift boxes", active: true, featured: true, icon: "🎁" },
+  { id: "cat-3", name: "Gift Hamper", slug: "gift-hamper", description: "Bespoke curated hampers with keepsake flowers, candles and sweets", active: true, featured: true, icon: "🧺" },
+  { id: "cat-4", name: "Glitter Editions", slug: "glitter-editions", description: "Sparkling shimmer luxury ribbon flowers for extraordinary occasions", active: true, featured: true, icon: "✨" },
+  { id: "cat-5", name: "Wedding & Keepsake", slug: "wedding-keepsake", description: "Forever wedding arrangements, bridal keepsakes, and anniversaries", active: true, featured: false, icon: "💍" },
+];
+
+export const INITIAL_OCCASIONS: OccasionRecord[] = [
+  {
+    id: "anniversary",
+    name: "Anniversary & Romance",
+    headline: "Express timeless devotion with classic red blooms",
+    recommendedSlug: "red-rose-bouquet",
+    bannerImage: "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881756/happiwrapz/products/rose-bouquet-1.jpg",
+    badge: "Most Cherished",
+    active: true,
+  },
+  {
+    id: "birthday",
+    name: "Luxury Birthdays",
+    headline: "Make celebrations unforgettable with glitter luxury roses",
+    recommendedSlug: "glitter-rose-luxury",
+    bannerImage: "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881737/happiwrapz/products/glitter-rose-1.jpg",
+    badge: "Celebration",
+    active: true,
+  },
+  {
+    id: "congratulations",
+    name: "Congratulations & Milestones",
+    headline: "Artisanal crimson hampers with keepsake candle and chocolates",
+    recommendedSlug: "eternal-crimson-hamper",
+    bannerImage: "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881759/happiwrapz/products/rose-bouquet-3.jpg",
+    badge: "Milestones",
+    active: true,
+  },
+  {
+    id: "just-because",
+    name: "Just For You ♡",
+    headline: "Surprise moments with same-day Coimbatore delivery",
+    recommendedSlug: "midnight-rose-box",
+    bannerImage: "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881758/happiwrapz/products/rose-bouquet-2.jpg",
+    badge: "Sweet Surprise",
+    active: true,
+  },
+];
+
 interface DatabaseSchema {
   products: Product[];
   orders: OrderRequest[];
@@ -82,6 +161,11 @@ interface DatabaseSchema {
   auditLogs: AuditLogEntry[];
   contacts: ContactMessage[];
   subscribers: Subscriber[];
+  payments: PaymentRecord[];
+  returns: ReturnRecord[];
+  categories?: CategoryRecord[];
+  occasions?: OccasionRecord[];
+  reviews?: ProductReview[];
 }
 
 const BUNDLE_DB_FILE = path.join(process.cwd(), ".data", "db.json");
@@ -90,432 +174,21 @@ const DATA_DIR = process.env.VERCEL
   : path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 
-// ── Initial Seed Data ────────────────────────────────────────────────────────
+if (process.env.VERCEL && !isPostgresConfigured) {
+  console.warn(
+    "[Storage Warning] Running on Vercel without POSTGRES_URL. /tmp storage is ephemeral. Please configure POSTGRES_URL for persistent orders."
+  );
+}
 
-const INITIAL_SEED_ORDERS: OrderRequest[] = [
-  {
-    id: "order-001",
-    reference: "HW-A3K7P9",
-    status: "pending",
-    items: [
-      {
-        product: {
-          id: "red-rose-bouquet",
-          slug: "red-rose-bouquet",
-          name: "Handcrafted Ribbon Rose Bouquet",
-          category: "Flower Bouquet",
-          description: "Artisanal satin ribbon roses folded meticulously by hand.",
-          price: 1499,
-          images: ["/images/products/rose-bouquet-1.jpg"],
-          inStock: true,
-          featured: true,
-          options: [],
-          stockQuantity: 45,
-          lowStockThreshold: 10,
-        },
-        quantity: 2,
-        selectedOptions: {},
-        giftMessage: "Happy Anniversary! Forever yours ♡",
-      },
-    ],
-    customer: {
-      name: "Priya Sharma",
-      email: "priya@example.com",
-      phone: "+91 98765 43210",
-      address: "42 Lily Lane, Koramangala",
-      city: "Bangalore",
-      pincode: "560034",
-    },
-    deliveryDate: "2026-11-01",
-    deliverySlot: "Morning (9:00 AM - 12:00 PM)",
-    notes: "Please ring the doorbell twice",
-    subtotal: 2998,
-    discountAmount: 0,
-    totalAmount: 2998,
-    paymentMethod: "Zero Online Payment — WhatsApp Confirmed",
-    paymentStatus: "confirmed_whatsapp",
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    statusHistory: [],
-  },
-  {
-    id: "order-002",
-    reference: "HW-B8M2T4",
-    status: "confirmed",
-    items: [
-      {
-        product: {
-          id: "glitter-rose-luxury",
-          slug: "glitter-rose-luxury",
-          name: "Ribbon Rose Bouquet — Glitter Luxury Edition",
-          category: "Flower Bouquet",
-          description: "Handcrafted glitter ribbon roses in matte black wrap.",
-          price: 1899,
-          images: ["/images/products/glitter-rose-1.jpg"],
-          inStock: true,
-          featured: true,
-          options: [],
-          stockQuantity: 28,
-          lowStockThreshold: 8,
-        },
-        quantity: 1,
-        selectedOptions: {},
-      },
-    ],
-    customer: {
-      name: "Rohit Mehta",
-      email: "rohit@example.com",
-      phone: "+91 87654 32109",
-      address: "15 Rose Garden, Indiranagar",
-      city: "Bangalore",
-      pincode: "560038",
-    },
-    deliveryDate: "2026-10-30",
-    deliverySlot: "Afternoon (1:00 PM - 5:00 PM)",
-    subtotal: 1899,
-    discountAmount: 0,
-    totalAmount: 1899,
-    paymentMethod: "Zero Online Payment — WhatsApp Confirmed",
-    paymentStatus: "confirmed_whatsapp",
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    statusHistory: [
-      {
-        from: "pending",
-        to: "confirmed",
-        timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-        by: "Happiwrapz Owner",
-        note: "Bloom availability and slot confirmed on WhatsApp",
-      },
-    ],
-  },
-  {
-    id: "order-003",
-    reference: "HW-K9P4X2",
-    status: "delivered",
-    items: [
-      {
-        product: {
-          id: "eternal-crimson-hamper",
-          slug: "eternal-crimson-hamper",
-          name: "Eternal Ribbon Flower Luxury Hamper",
-          category: "Gift Hamper",
-          description: "Handmade satin ribbon roses, chocolates & keepsake trunk.",
-          price: 3499,
-          images: ["/images/products/hamper-1.jpg"],
-          inStock: true,
-          featured: true,
-          options: [],
-          stockQuantity: 15,
-          lowStockThreshold: 5,
-        },
-        quantity: 1,
-        selectedOptions: {},
-        giftMessage: "To our visionary director on your retirement celebration.",
-      },
-    ],
-    customer: {
-      name: "Ananya Deshmukh",
-      email: "ananya.d@techcorp.in",
-      phone: "+91 99887 76655",
-      address: "Tower 4, Embassy TechVillage, Outer Ring Rd",
-      city: "Bangalore",
-      pincode: "560103",
-    },
-    deliveryDate: "2026-10-25",
-    deliverySlot: "Morning (9:00 AM - 12:00 PM)",
-    subtotal: 3499,
-    discountAmount: 350,
-    couponCode: "ATELIER10",
-    totalAmount: 3149,
-    paymentMethod: "Zero Online Payment — WhatsApp Confirmed",
-    paymentStatus: "paid",
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    statusHistory: [
-      {
-        from: "pending",
-        to: "confirmed",
-        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        by: "Happiwrapz Owner",
-        note: "Corporate concierge booking confirmed",
-      },
-      {
-        from: "confirmed",
-        to: "ready",
-        timestamp: new Date(Date.now() - 2.5 * 24 * 60 * 60 * 1000).toISOString(),
-        by: "Store Manager",
-        note: "Luxury trunk styling finished",
-      },
-      {
-        from: "ready",
-        to: "delivered",
-        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        by: "Fulfillment Courier",
-        note: "Handed over to recipient at reception",
-      },
-    ],
-  },
-];
-
-const INITIAL_CUSTOM_ORDERS: CustomOrderRequest[] = [
-  {
-    id: "cust-001",
-    reference: "CUST-8491A",
-    customer: {
-      name: "Vikram Singhania",
-      email: "vikram.s@singhania.co",
-      phone: "+91 97766 55443",
-      address: "Penthouse 12, Kingfisher Towers, Ashok Nagar",
-      city: "Bangalore",
-      pincode: "560001",
-    },
-    occasion: "Proposal & Engagement",
-    productType: "Grand Keepsake Acrylic Showcase",
-    flowerPreferences: "100 Crimson Satin Ribbon Roses with Subtle Diamond Sparkle",
-    stemCount: 100,
-    wrappingStyle: "Parisian Matte Black with Gold Rim",
-    boxStyle: "Grand Acrylic Showcase",
-    personalizationText: "Aisha, Forever My Queen • 14.02.2026",
-    giftMessage: "Will you make me the happiest person forever?",
-    budget: 6500,
-    desiredDeliveryDate: "2026-11-05",
-    desiredDeliverySlot: "Evening (6:00 PM - 9:00 PM)",
-    specialInstructions: "Needs warm fairy lights woven between stems and velvet keepsake ribbon.",
-    status: "quote_sent",
-    assignedAdmin: "Happiwrapz Owner",
-    quotation: {
-      id: "quote-001",
-      customOrderId: "cust-001",
-      lineItems: [
-        {
-          id: "li-1",
-          description: "100 Hand-folded Satin Crimson Ribbon Roses",
-          quantity: 1,
-          unitPrice: 4500,
-          total: 4500,
-        },
-        {
-          id: "li-2",
-          description: "Museum-grade Grand Acrylic Showcase Box with Gold Base",
-          quantity: 1,
-          unitPrice: 950,
-          total: 950,
-        },
-        {
-          id: "li-3",
-          description: "Warm LED Micro Fairy Lights & Velvet Bow Calligraphy",
-          quantity: 1,
-          unitPrice: 350,
-          total: 350,
-        },
-      ],
-      customizationFee: 400,
-      packagingFee: 200,
-      deliveryFee: 0,
-      discount: 200,
-      tax: 0,
-      total: 6200,
-      estimatedPrepTimeHours: 18,
-      expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-      notes: "Quotation includes hand delivery by our master florist directly to venue.",
-      status: "sent",
-      materialCostEstimate: 2100,
-      laborCostEstimate: 1200,
-      createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    },
-    convertedOrderId: null,
-    createdAt: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    statusHistory: [
-      {
-        from: "new",
-        to: "reviewing",
-        timestamp: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
-        by: "Happiwrapz Owner",
-        note: "Reviewed client request and venue requirements",
-      },
-      {
-        from: "reviewing",
-        to: "quote_sent",
-        timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-        by: "Happiwrapz Owner",
-        note: "Formal proposal quotation sent via WhatsApp",
-      },
-    ],
-  },
-  {
-    id: "cust-002",
-    reference: "CUST-3920B",
-    customer: {
-      name: "Sneha Reddy",
-      email: "sneha.reddy@gmail.com",
-      phone: "+91 94433 22110",
-      address: "Villa 8, Epsilon Villas, Yemlur",
-      city: "Bangalore",
-      pincode: "560037",
-    },
-    occasion: "Golden 50th Wedding Anniversary",
-    productType: "Velvet Keepsake Round Box",
-    flowerPreferences: "50 Golden Ribbon Sunflowers & Ivory Satin Roses",
-    stemCount: 50,
-    wrappingStyle: "Velvet Gold Trim Wrap",
-    boxStyle: "Velvet Keepsake Box",
-    personalizationText: "Mom & Dad • 50 Years of Golden Harmony",
-    giftMessage: "Wishing you both endless love and health.",
-    budget: 4000,
-    desiredDeliveryDate: "2026-11-10",
-    status: "new",
-    assignedAdmin: "Store Manager",
-    quotation: null,
-    convertedOrderId: null,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    statusHistory: [],
-  },
-];
-
-const INITIAL_COUPONS: Coupon[] = [
-  {
-    id: "coup-1",
-    code: "WELCOME10",
-    type: "percentage",
-    value: 10,
-    minOrderAmount: 1499,
-    maxDiscountAmount: 300,
-    usageLimit: 500,
-    usedCount: 38,
-    validFrom: "2026-01-01T00:00:00.000Z",
-    validUntil: "2026-12-31T23:59:59.000Z",
-    active: true,
-    applicableCategory: "all",
-    createdAt: "2026-01-01T00:00:00.000Z",
-  },
-  {
-    id: "coup-2",
-    code: "ATELIER10",
-    type: "percentage",
-    value: 10,
-    minOrderAmount: 2500,
-    maxDiscountAmount: 500,
-    usageLimit: 200,
-    usedCount: 14,
-    validFrom: "2026-01-01T00:00:00.000Z",
-    validUntil: "2026-12-31T23:59:59.000Z",
-    active: true,
-    applicableCategory: "Gift Hamper",
-    createdAt: "2026-01-01T00:00:00.000Z",
-  },
-  {
-    id: "coup-3",
-    code: "FLORAL250",
-    type: "fixed",
-    value: 250,
-    minOrderAmount: 1999,
-    usageLimit: 100,
-    usedCount: 22,
-    validFrom: "2026-02-01T00:00:00.000Z",
-    validUntil: "2026-11-30T23:59:59.000Z",
-    active: true,
-    applicableCategory: "all",
-    createdAt: "2026-02-01T00:00:00.000Z",
-  },
-];
-
-const INITIAL_INVENTORY_MOVEMENTS: InventoryMovement[] = [
-  {
-    id: "inv-001",
-    productId: "red-rose-bouquet",
-    productName: "Handcrafted Ribbon Rose Bouquet",
-    change: 50,
-    previousStock: 0,
-    newStock: 50,
-    reason: "restock",
-    actorName: "Happiwrapz Owner",
-    actorRole: "owner",
-    referenceId: "BATCH-2026-OCT",
-    timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "inv-002",
-    productId: "red-rose-bouquet",
-    productName: "Handcrafted Ribbon Rose Bouquet",
-    change: -2,
-    previousStock: 50,
-    newStock: 48,
-    reason: "order_fulfillment",
-    actorName: "Store Manager",
-    actorRole: "manager",
-    referenceId: "order-001",
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "inv-003",
-    productId: "glitter-rose-luxury",
-    productName: "Ribbon Rose Bouquet — Glitter Luxury Edition",
-    change: 30,
-    previousStock: 0,
-    newStock: 30,
-    reason: "restock",
-    actorName: "Happiwrapz Owner",
-    actorRole: "owner",
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
-const INITIAL_NOTIFICATIONS: AdminNotification[] = [
-  {
-    id: "notif-001",
-    title: "New Custom Order Inquiry",
-    message: "Sneha Reddy requested a 50-stem Sunflower & Rose Golden Anniversary arrangement.",
-    type: "custom_order",
-    referenceId: "cust-002",
-    link: "/admin/custom-orders/cust-002",
-    isRead: false,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "notif-002",
-    title: "Quotation Sent to Client",
-    message: "Quotation of ₹6,200 sent to Vikram Singhania for Proposal Showcase.",
-    type: "quote_accepted",
-    referenceId: "cust-001",
-    link: "/admin/custom-orders/cust-001",
-    isRead: false,
-    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "notif-003",
-    title: "Order Delivered Successfully",
-    message: "Order HW-K9P4X2 (Eternal Ribbon Hamper) was delivered to Ananya Deshmukh.",
-    type: "order",
-    referenceId: "order-003",
-    link: "/admin/orders/order-003",
-    isRead: true,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
-const INITIAL_WEBSITE_SETTINGS: WebsiteSettings = {
-  announcement: "🎀 Handcrafted with love — Order requests open for Bangalore delivery",
-  announcementActive: true,
-  announcementLink: "/catalog",
-  heroHeading: "The Moments Deserve Flowers.",
-  heroSubheading: "Handcrafted satin ribbon roses, eternal sunflowers that never wilt, and signature European hand-tied wraps in Bangalore with zero upfront payment.",
-  heroButtonText: "Explore Collection",
-  heroButtonLink: "/catalog",
-  promoBannerActive: true,
-  promoBannerText: "✨ Handcrafted in Bangalore • Complimentary Handwritten Wax-Sealed Note Included",
-  contactPhone: "+91 98765 43210",
-  contactEmail: "concierge@happiwrapz.in",
-  deliveryRadiusKm: 25,
-  minLeadTimeHours: 4,
-  storeOpen: true,
-  publishedAt: new Date().toISOString(),
-  updatedBy: "Happiwrapz Owner",
-};
-
+// -- Initial Seed Data imported from ./seedData ------------------------------
+import {
+  INITIAL_SEED_ORDERS,
+  INITIAL_CUSTOM_ORDERS,
+  INITIAL_COUPONS,
+  INITIAL_INVENTORY_MOVEMENTS,
+  INITIAL_NOTIFICATIONS,
+  INITIAL_WEBSITE_SETTINGS,
+} from "./seedData";
 // ── Global In-Memory Cache with Disk Sync ────────────────────────────────────
 
 let inMemoryDb: DatabaseSchema | null = null;
@@ -560,6 +233,11 @@ function loadDatabase(): DatabaseSchema {
         inMemoryDb.coupons = inMemoryDb.coupons || [...INITIAL_COUPONS];
         inMemoryDb.websiteSettings = inMemoryDb.websiteSettings || { ...INITIAL_WEBSITE_SETTINGS };
         inMemoryDb.auditLogs = inMemoryDb.auditLogs || [];
+        inMemoryDb.payments = inMemoryDb.payments || [];
+        inMemoryDb.returns = inMemoryDb.returns || [];
+        inMemoryDb.categories = inMemoryDb.categories || [...INITIAL_CATEGORIES];
+        inMemoryDb.occasions = inMemoryDb.occasions || [...INITIAL_OCCASIONS];
+        inMemoryDb.reviews = inMemoryDb.reviews || [...INITIAL_PRODUCT_REVIEWS];
         if (isPostgresConfigured) {
           ensurePostgresReady({
             products: inMemoryDb.products,
@@ -596,6 +274,10 @@ function loadDatabase(): DatabaseSchema {
     users: [...DEMO_ACCOUNTS],
     auditLogs: [],
     contacts: [],
+    payments: [],
+    returns: [],
+    categories: [...INITIAL_CATEGORIES],
+    occasions: [...INITIAL_OCCASIONS],
     subscribers: [
       {
         id: "sub-1",
@@ -620,15 +302,26 @@ function loadDatabase(): DatabaseSchema {
   return inMemoryDb;
 }
 
+let saveDiskTimer: NodeJS.Timeout | null = null;
+
 function saveDatabase(db: DatabaseSchema) {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+  // 1. Immediately update the in-memory singleton
+  inMemoryDb = db;
+
+  // 2. Debounced async atomic flush to disk to avoid blocking the Node.js event loop
+  if (saveDiskTimer) clearTimeout(saveDiskTimer);
+  saveDiskTimer = setTimeout(async () => {
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        await fs.promises.mkdir(DATA_DIR, { recursive: true });
+      }
+      const tmpFile = `${DB_FILE}.tmp.${Date.now()}`;
+      await fs.promises.writeFile(tmpFile, JSON.stringify(db, null, 2), "utf-8");
+      await fs.promises.rename(tmpFile, DB_FILE);
+    } catch (err) {
+      console.warn("Failed to write db.json to disk:", err);
     }
-    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
-  } catch (err) {
-    console.warn("Failed to write db.json to disk:", err);
-  }
+  }, 50);
 }
 
 // ── Products API ─────────────────────────────────────────────────────────────
@@ -737,7 +430,7 @@ export async function createProduct(
     ...data,
     id,
     slug,
-    images: data.images?.length ? data.images : ["/images/products/rose-bouquet-1.jpg"],
+    images: data.images?.length ? data.images : ["https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881756/happiwrapz/products/rose-bouquet-1.jpg"],
     inStock: data.inStock !== undefined ? data.inStock : true,
     featured: data.featured || false,
     options: data.options || [],
@@ -982,6 +675,10 @@ export async function createOrder(data: {
     if (prod && prod.stockQuantity !== undefined) {
       const prevStock = prod.stockQuantity;
       prod.stockQuantity = Math.max(0, prod.stockQuantity - item.quantity);
+      prod.inStock = prod.stockQuantity > 0;
+      if (isPostgresConfigured) {
+        pgSaveProduct(prod).catch((e) => console.warn("[Postgres] stock sync error:", e));
+      }
       db.inventoryMovements.unshift({
         id: `inv-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
         productId: prod.id,
@@ -1000,7 +697,7 @@ export async function createOrder(data: {
       if (prod.stockQuantity <= (prod.lowStockThreshold || 5)) {
         createNotification({
           title: `Low Stock Alert: ${prod.name}`,
-          message: `Only ${prod.stockQuantity} blooms remaining in atelier inventory.`,
+          message: `Only ${prod.stockQuantity} blooms remaining in studio inventory.`,
           type: "low_stock",
           referenceId: prod.id,
           link: "/admin/inventory",
@@ -1115,6 +812,44 @@ export async function addOrderInternalNote(
     actorName,
     actorRole: "admin",
     note: `Added internal note: ${note.substring(0, 50)}...`,
+  });
+
+  saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveOrder(order).catch((e) => console.warn("[Postgres] pgSaveOrder error:", e));
+  }
+  return order;
+}
+
+export async function updateOrderTracking(
+  referenceOrId: string,
+  tracking: {
+    trackingUrl?: string;
+    trackingNumber?: string;
+    courierName?: string;
+  },
+  actorName: string = "Happiwrapz Owner"
+): Promise<OrderRequest | null> {
+  const db = loadDatabase();
+  const cleanRef = referenceOrId.trim().toUpperCase();
+  const order = db.orders.find(
+    (o) => o.reference.toUpperCase() === cleanRef || o.id === referenceOrId
+  );
+  if (!order) return null;
+
+  const now = new Date().toISOString();
+  order.trackingUrl = tracking.trackingUrl?.trim() || undefined;
+  order.trackingNumber = tracking.trackingNumber?.trim() || undefined;
+  order.courierName = tracking.courierName?.trim() || undefined;
+  order.updatedAt = now;
+
+  logAudit({
+    orderId: order.id,
+    reference: order.reference,
+    action: "TRACKING_UPDATED",
+    actorName,
+    actorRole: "admin",
+    note: `Updated tracking: Courier=${order.courierName || "N/A"}, ID=${order.trackingNumber || "N/A"}`,
   });
 
   saveDatabase(db);
@@ -1365,7 +1100,7 @@ export async function convertCustomOrderToStandardOrder(
     category: "Custom Order",
     description: `${custom.flowerPreferences} in ${custom.wrappingStyle}. Custom Ribbon: "${custom.personalizationText}".`,
     price: custom.quotation.total,
-    images: ["/images/products/rose-bouquet-1.jpg"],
+    images: ["https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881756/happiwrapz/products/rose-bouquet-1.jpg"],
     inStock: true,
     featured: false,
     options: [],
@@ -1515,6 +1250,9 @@ export async function adjustStock(data: {
   });
 
   saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveProduct(prod).catch((e) => console.warn("[Postgres] stock sync error:", e));
+  }
   return prod;
 }
 
@@ -2049,18 +1787,32 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   return found || null;
 }
 
+export function sanitizeUser(user: User): User {
+  const { passwordHash, ...safe } = user;
+  return {
+    ...safe,
+    hasPassword: !!passwordHash,
+  };
+}
+
+export async function getUserById(id: string): Promise<User | null> {
+  const db = loadDatabase();
+  const found = db.users.find((u) => u.id === id);
+  return found || null;
+}
+
 export async function getUsers(): Promise<User[]> {
   if (isPostgresConfigured) {
     try {
       const pgUsers = await pgGetUsers();
-      if (pgUsers && pgUsers.length > 0) return pgUsers;
+      if (pgUsers && pgUsers.length > 0) return pgUsers.map(sanitizeUser);
     } catch (e) {
       console.warn("[Postgres] getUsers fallback:", e);
     }
   }
 
   const db = loadDatabase();
-  return db.users;
+  return db.users.map(sanitizeUser);
 }
 
 export async function updateUserRole(userId: string, newRole: User["role"]): Promise<User | null> {
@@ -2080,20 +1832,57 @@ export async function updateUserRole(userId: string, newRole: User["role"]): Pro
   if (isPostgresConfigured) {
     pgSaveUser(user).catch((e) => console.warn("[Postgres] update user error:", e));
   }
-  return user;
+  return sanitizeUser(user);
+}
+
+export async function updateUserPassword(
+  userId: string,
+  newPassword: string,
+  actorName: string
+): Promise<User | null> {
+  const db = loadDatabase();
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) return null;
+
+  user.passwordHash = hashPassword(newPassword);
+  user.hasPassword = true;
+  user.passwordUpdatedAt = new Date().toISOString();
+  user.passwordSetBy = actorName;
+
+  logAudit({
+    action: "USER_PASSWORD_RESET_BY_ADMIN",
+    actorName,
+    actorRole: "owner",
+    note: `Admin ${actorName} set/reset security password for staff ${user.email} (${user.name})`,
+  });
+
+  saveDatabase(db);
+  if (isPostgresConfigured) {
+    pgSaveUser(user).catch((e) => console.warn("[Postgres] update user password error:", e));
+  }
+  return sanitizeUser(user);
 }
 
 export async function createUser(data: {
   email: string;
   name: string;
   role?: User["role"];
+  password?: string;
+  actorName?: string;
 }): Promise<User> {
   const db = loadDatabase();
   const clean = data.email.trim().toLowerCase();
 
   const existing = db.users.find((u) => u.email.toLowerCase() === clean);
   if (existing) {
-    return existing;
+    if (data.password) {
+      existing.passwordHash = hashPassword(data.password);
+      existing.hasPassword = true;
+      existing.passwordUpdatedAt = new Date().toISOString();
+      existing.passwordSetBy = data.actorName || "admin";
+      saveDatabase(db);
+    }
+    return sanitizeUser(existing);
   }
 
   const newUser: User = {
@@ -2104,12 +1893,19 @@ export async function createUser(data: {
     createdAt: new Date().toISOString(),
   };
 
+  if (data.password) {
+    newUser.passwordHash = hashPassword(data.password);
+    newUser.hasPassword = true;
+    newUser.passwordUpdatedAt = new Date().toISOString();
+    newUser.passwordSetBy = data.actorName || "admin";
+  }
+
   db.users.push(newUser);
   saveDatabase(db);
   if (isPostgresConfigured) {
     pgSaveUser(newUser).catch((e) => console.warn("[Postgres] save user error:", e));
   }
-  return newUser;
+  return sanitizeUser(newUser);
 }
 
 export async function deleteUser(userId: string): Promise<boolean> {
@@ -2129,3 +1925,219 @@ export async function deleteUser(userId: string): Promise<boolean> {
   return false;
 }
 
+
+// ── Payments & Transactions ──────────────────────────────────────────────────
+
+export async function recordPayment(payment: Omit<PaymentRecord, "id" | "createdAt" | "updatedAt">): Promise<PaymentRecord> {
+  const db = loadDatabase();
+  const now = new Date().toISOString();
+  const newPayment: PaymentRecord = {
+    ...payment,
+    id: `pay-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  db.payments = db.payments || [];
+  db.payments.push(newPayment);
+  saveDatabase(db);
+
+  if (isPostgresConfigured) {
+    pgSavePayment(newPayment).catch((e) => console.warn("[Postgres] save payment error:", e));
+  }
+  return newPayment;
+}
+
+export async function getPayments(orderId?: string): Promise<PaymentRecord[]> {
+  const db = loadDatabase();
+  db.payments = db.payments || [];
+  if (orderId) {
+    return db.payments.filter((p) => p.orderId === orderId || p.orderReference === orderId);
+  }
+  return db.payments;
+}
+
+// ── Returns & Refunds ────────────────────────────────────────────────────────
+
+export async function recordReturn(ret: Omit<ReturnRecord, "id" | "createdAt" | "updatedAt">): Promise<ReturnRecord> {
+  const db = loadDatabase();
+  const now = new Date().toISOString();
+  const newReturn: ReturnRecord = {
+    ...ret,
+    id: `ret-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  db.returns = db.returns || [];
+  db.returns.push(newReturn);
+  saveDatabase(db);
+
+  if (isPostgresConfigured) {
+    pgSaveReturn(newReturn).catch((e) => console.warn("[Postgres] save return error:", e));
+  }
+  return newReturn;
+}
+
+export async function getReturns(orderId?: string): Promise<ReturnRecord[]> {
+  const db = loadDatabase();
+  db.returns = db.returns || [];
+  if (orderId) {
+    return db.returns.filter((r) => r.orderId === orderId || r.orderReference === orderId);
+  }
+  return db.returns;
+}
+
+// ── Categories Management ───────────────────────────────────────────────────
+
+export async function getCategories(): Promise<CategoryRecord[]> {
+  const db = loadDatabase();
+  return db.categories || [...INITIAL_CATEGORIES];
+}
+
+export async function saveCategory(category: Omit<CategoryRecord, "id">): Promise<CategoryRecord> {
+  const db = loadDatabase();
+  db.categories = db.categories || [...INITIAL_CATEGORIES];
+  const newCat: CategoryRecord = {
+    ...category,
+    id: `cat-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    slug: category.slug || category.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+  };
+  db.categories.push(newCat);
+  saveDatabase(db);
+  return newCat;
+}
+
+export async function updateCategory(id: string, updates: Partial<CategoryRecord>): Promise<CategoryRecord | null> {
+  const db = loadDatabase();
+  db.categories = db.categories || [...INITIAL_CATEGORIES];
+  const idx = db.categories.findIndex((c) => c.id === id || c.slug === id);
+  if (idx === -1) return null;
+  db.categories[idx] = { ...db.categories[idx], ...updates };
+  saveDatabase(db);
+  return db.categories[idx];
+}
+
+export async function deleteCategory(id: string): Promise<boolean> {
+  const db = loadDatabase();
+  db.categories = db.categories || [...INITIAL_CATEGORIES];
+  const initialLen = db.categories.length;
+  db.categories = db.categories.filter((c) => c.id !== id && c.slug !== id);
+  if (db.categories.length !== initialLen) {
+    saveDatabase(db);
+    return true;
+  }
+  return false;
+}
+
+// ── Occasions Management ────────────────────────────────────────────────────
+
+export async function getOccasions(): Promise<OccasionRecord[]> {
+  const db = loadDatabase();
+  return db.occasions || [...INITIAL_OCCASIONS];
+}
+
+export async function saveOccasion(occasion: Omit<OccasionRecord, "id">): Promise<OccasionRecord> {
+  const db = loadDatabase();
+  db.occasions = db.occasions || [...INITIAL_OCCASIONS];
+  const newOcc: OccasionRecord = {
+    ...occasion,
+    id: `occ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+  };
+  db.occasions.push(newOcc);
+  saveDatabase(db);
+  return newOcc;
+}
+
+export async function updateOccasion(id: string, updates: Partial<OccasionRecord>): Promise<OccasionRecord | null> {
+  const db = loadDatabase();
+  db.occasions = db.occasions || [...INITIAL_OCCASIONS];
+  const idx = db.occasions.findIndex((o) => o.id === id);
+  if (idx === -1) return null;
+  db.occasions[idx] = { ...db.occasions[idx], ...updates };
+  saveDatabase(db);
+  return db.occasions[idx];
+}
+
+export async function deleteOccasion(id: string): Promise<boolean> {
+  const db = loadDatabase();
+  db.occasions = db.occasions || [...INITIAL_OCCASIONS];
+  const initialLen = db.occasions.length;
+  db.occasions = db.occasions.filter((o) => o.id !== id);
+  if (db.occasions.length !== initialLen) {
+    saveDatabase(db);
+    return true;
+  }
+  return false;
+}
+
+// ── Reviews Engine ─────────────────────────────────────────────────────────
+
+export async function getProductReviews(productIdOrSlug: string): Promise<ProductReview[]> {
+  const db = loadDatabase();
+  db.reviews = db.reviews || [...INITIAL_PRODUCT_REVIEWS];
+
+  const product = db.products.find((p) => p.id === productIdOrSlug || p.slug === productIdOrSlug);
+  const targetIds = new Set<string>([productIdOrSlug]);
+  if (product) {
+    targetIds.add(product.id);
+    targetIds.add(product.slug);
+  }
+
+  const matches = db.reviews.filter((r) => targetIds.has(r.productId));
+  return matches.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function addProductReview(reviewData: {
+  productId: string;
+  authorName: string;
+  authorEmail?: string;
+  rating: number;
+  title: string;
+  comment: string;
+  flowerCount?: number;
+  colorChosen?: string;
+  verifiedBuyer?: boolean;
+}): Promise<ProductReview> {
+  const db = loadDatabase();
+  db.reviews = db.reviews || [...INITIAL_PRODUCT_REVIEWS];
+
+  const newReview: ProductReview = {
+    id: `rev-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    productId: reviewData.productId,
+    authorName: reviewData.authorName.trim(),
+    authorEmail: reviewData.authorEmail?.trim() || undefined,
+    rating: Math.min(5, Math.max(1, Math.round(reviewData.rating))),
+    title: reviewData.title.trim(),
+    comment: reviewData.comment.trim(),
+    flowerCount: reviewData.flowerCount,
+    colorChosen: reviewData.colorChosen,
+    verifiedBuyer: reviewData.verifiedBuyer ?? true,
+    createdAt: new Date().toISOString(),
+    helpfulCount: 0,
+  };
+
+  db.reviews.unshift(newReview);
+
+  // Recalculate average rating & review count for the product
+  const product = db.products.find((p) => p.id === reviewData.productId || p.slug === reviewData.productId);
+  if (product) {
+    const allProdReviews = db.reviews.filter((r) => r.productId === product.id || r.productId === product.slug);
+    const avg = allProdReviews.reduce((sum, r) => sum + r.rating, 0) / allProdReviews.length;
+    product.rating = Math.round(avg * 10) / 10;
+    product.reviewsCount = allProdReviews.length;
+  }
+
+  saveDatabase(db);
+  return newReview;
+}
+
+export async function voteReviewHelpful(reviewId: string): Promise<{ helpfulCount: number } | null> {
+  const db = loadDatabase();
+  db.reviews = db.reviews || [...INITIAL_PRODUCT_REVIEWS];
+  const review = db.reviews.find((r) => r.id === reviewId);
+  if (!review) return null;
+  review.helpfulCount = (review.helpfulCount || 0) + 1;
+  saveDatabase(db);
+  return { helpfulCount: review.helpfulCount };
+}

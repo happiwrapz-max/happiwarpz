@@ -225,7 +225,7 @@ export default function AdminInventoryPage() {
                     <td className="py-4 px-6 flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl overflow-hidden relative bg-[#FAF8F5] shrink-0 border border-[#EFEAE2]">
                         <Image
-                          src={p.images?.[0] || "/images/products/rose-bouquet-1.jpg"}
+                          src={p.images?.[0] || "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881756/happiwrapz/products/rose-bouquet-1.jpg"}
                           alt={p.name}
                           fill
                           className="object-cover"
@@ -345,7 +345,7 @@ export default function AdminInventoryPage() {
                 onChange={(e) => setAdjustReason(e.target.value as any)}
                 className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#EFEAE2] rounded-xl text-[#1E1E1E] focus:outline-hidden focus:border-[#E10600]"
               >
-                <option value="restock">Fresh Handcrafted Atelier Restock</option>
+                <option value="restock">Fresh Handcrafted Restock</option>
                 <option value="damage_write_off">Damaged / Flawed Satin Write-Off</option>
                 <option value="audit_correction">Manual Physical Count Correction</option>
                 <option value="order_fulfillment">Manual Order Allocation</option>

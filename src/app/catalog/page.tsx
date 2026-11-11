@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import BagDrawer from "@/components/bag/BagDrawer";
+
 import { Product } from "@/lib/store/types";
 import { CATALOG } from "@/lib/data/catalog";
 import { formatPrice } from "@/lib/utils";
@@ -29,18 +29,103 @@ import {
   ChevronDown
 } from "lucide-react";
 import { RibbonEmblem } from "@/components/ui/RibbonEmblem";
+import { buildCloudinaryUrl } from "@/lib/cloudinary";
 
 function CatalogContent() {
   const searchParams = useSearchParams();
   const paramCategory = searchParams.get("category");
   const paramQuery = searchParams.get("q") || searchParams.get("search") || "";
 
+  const [liveProducts, setLiveProducts] = useState<Product[]>(CATALOG);
   const [selectedCategory, setSelectedCategory] = useState(paramCategory || "all");
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState(paramQuery);
   const [sortBy, setSortBy] = useState("featured");
   const [addedId, setAddedId] = useState<string | null>(null);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [categories, setCategories] = useState<{ label: string; value: string }[]>([
+    { label: "All Products", value: "all" },
+    { label: "Flower Bouquet", value: "Flower Bouquet" },
+    { label: "Gift Box", value: "Gift Box" },
+    { label: "Gift Hamper", value: "Gift Hamper" },
+    { label: "Glitter Editions", value: "Glitter Editions" },
+    { label: "Personalized Gifts", value: "Personalized Gifts" },
+    { label: "Wedding & Keepsake", value: "Wedding & Keepsake" },
+  ]);
+
+  // Load authoritative live products and categories from database
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadLiveData() {
+      try {
+        const [prodRes, catRes] = await Promise.allSettled([
+          fetch(`/api/products?t=${Date.now()}`, { cache: "no-store" }),
+          fetch(`/api/admin/categories?t=${Date.now()}`, { cache: "no-store" }),
+        ]);
+
+        if (prodRes.status === "fulfilled") {
+          const prodData = await prodRes.value.json();
+          if (isMounted && prodData.success && Array.isArray(prodData.products) && prodData.products.length > 0) {
+            setLiveProducts(prodData.products);
+
+            // Dynamically discover all unique categories in live catalog
+            const discovered = new Set<string>();
+            prodData.products.forEach((p: Product) => {
+              if (p.category && p.category.trim()) {
+                discovered.add(p.category.trim());
+              }
+            });
+
+            setCategories((prev) => {
+              const existingValues = new Set(prev.map((c) => c.value.toLowerCase()));
+              const updated = [...prev];
+              discovered.forEach((cat) => {
+                if (!existingValues.has(cat.toLowerCase())) {
+                  existingValues.add(cat.toLowerCase());
+                  updated.push({ label: cat, value: cat });
+                }
+              });
+              return updated;
+            });
+          }
+        }
+
+        if (catRes.status === "fulfilled") {
+          const catData = await catRes.value.json();
+          if (isMounted && catData.success && Array.isArray(catData.categories)) {
+            const apiCats = catData.categories
+              .filter((c: any) => c.active !== false)
+              .map((c: any) => ({ label: c.name, value: c.name }));
+
+            setCategories((prev) => {
+              const existingValues = new Set(apiCats.map((c: any) => c.value.toLowerCase()));
+              const merged = [{ label: "All Products", value: "all" }, ...apiCats];
+              prev.forEach((p) => {
+                if (p.value !== "all" && !existingValues.has(p.value.toLowerCase())) {
+                  existingValues.add(p.value.toLowerCase());
+                  merged.push(p);
+                }
+              });
+              return merged;
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[Catalog] Failed to load live catalog data:", err);
+      }
+    }
+
+    loadLiveData();
+
+    // Re-sync catalog whenever window regains focus (e.g. returning from admin studio tab)
+    const onFocus = () => loadLiveData();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
 
   const togglePriceRange = (rangeId: string) => {
     setSelectedPriceRanges((prev) =>
@@ -72,15 +157,6 @@ function CatalogContent() {
   const addItem = useBagStore((s) => s.addItem);
   const openDrawer = useBagStore((s) => s.openDrawer);
 
-  const categories = [
-    { label: "All Products", value: "all" },
-    { label: "Flower Boxes", value: "Flower Boxes" },
-    { label: "Gift Hampers", value: "Gift Hampers" },
-    { label: "Personalized Gifts", value: "Personalized Gifts" },
-    { label: "Home & Decor", value: "Home & Decor" },
-    { label: "Sweet Treats", value: "Sweet Treats" },
-  ];
-
   const priceRanges = [
     { id: "under-999", label: "Under ₹999" },
     { id: "1000-1999", label: "₹1,000 - ₹1,999" },
@@ -96,16 +172,26 @@ function CatalogContent() {
     );
   };
 
-  const handleQuickAdd = (product: (typeof CATALOG)[0], e?: React.MouseEvent) => {
+  const handleQuickAdd = (product: Product, e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     addItem(product, 1);
     setAddedId(product.id);
+
+    if (typeof window !== "undefined") {
+      const rect = e?.currentTarget?.getBoundingClientRect();
+      window.dispatchEvent(
+        new CustomEvent("happiwrapz:product-picked", {
+          detail: { product, sourceRect: rect },
+        })
+      );
+    }
+
     setTimeout(() => {
       setAddedId(null);
-    }, 1000);
+    }, 1200);
   };
 
   // Custom Order Pricing Calculation
@@ -124,7 +210,7 @@ function CatalogContent() {
 
   const totalCustomPrice = 1999 + stemPriceDelta + boxPriceDelta + addonsPriceDelta;
 
-  const handleAddCustomOrderToBag = () => {
+  const handleAddCustomOrderToBag = (e?: React.MouseEvent) => {
     const customProduct = {
       id: `custom-${Date.now()}`,
       slug: "bespoke-custom-order",
@@ -134,8 +220,8 @@ function CatalogContent() {
         }`,
       price: totalCustomPrice,
       images: [
-        "/images/hero-desktop.jpg",
-        "/images/hero-mobile.jpg",
+        "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881723/happiwrapz/assets/hero-desktop.jpg",
+        "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881726/happiwrapz/assets/hero-mobile.jpg",
       ],
       inStock: true,
       featured: true,
@@ -155,75 +241,93 @@ function CatalogContent() {
 
     addItem(customProduct, 1);
     setAddedId(customProduct.id);
+
+    if (typeof window !== "undefined") {
+      const rect = e?.currentTarget?.getBoundingClientRect();
+      window.dispatchEvent(
+        new CustomEvent("happiwrapz:product-picked", {
+          detail: { product: customProduct, sourceRect: rect },
+        })
+      );
+    }
+
     setTimeout(() => {
       setAddedId(null);
-    }, 1000);
+    }, 1200);
   };
 
   const customWhatsAppUrl = useMemo(() => {
     const text = `Hello Happiwrapz! I want to commission a Custom Ribbon Flower Gift:%0A• Blooms: ${customStemCount} ${customFlowerColor}%0A• Presentation: ${customBoxStyle}%0A• Custom Ribbon Text: "${customRibbonText}"%0A• Add-ons: ${customAddons.join(", ") || "None"
       }%0A• Estimated Total: ₹${totalCustomPrice}%0APlease confirm crafting schedule and dispatch availability.`;
-    return `https://wa.me/919876543210?text=${text}`;
+    return `https://wa.me/917708354636?text=${text}`;
   }, [customStemCount, customFlowerColor, customBoxStyle, customRibbonText, customAddons, totalCustomPrice]);
 
   const filtered = useMemo(() => {
-    // 1. Initial pool from Search Engine (if search query exists) or full CATALOG
+    // 1. Initial pool from Search Engine (if search query exists) or live products
     let pool: Product[];
     const hasSearch = searchQuery.trim().length > 0;
 
+    // Filter out any archived items
+    const activeProducts = liveProducts.filter((p) => !(p as any).archived);
+
     if (hasSearch) {
-      const searchResults = searchProducts(searchQuery, CATALOG);
+      const searchResults = searchProducts(searchQuery, activeProducts);
       pool = searchResults.map((r) => r.product);
     } else {
-      pool = CATALOG;
+      pool = activeProducts;
     }
 
-    // 2. Category matching
+    // 2. Dynamic & flexible category matching
     const matchesCategoryFunc = (item: Product) => {
       if (selectedCategory === "all") return true;
-      if (selectedCategory === item.category) return true;
+
+      const sel = selectedCategory.toLowerCase().trim();
+      const itemCat = (item.category || "").toLowerCase().trim();
+
+      // Direct match
+      if (sel === itemCat) return true;
+
+      // URL slug match
+      const selSlug = sel.replace(/[^a-z0-9]+/g, "-");
+      const itemSlug = itemCat.replace(/[^a-z0-9]+/g, "-");
+      if (selSlug === itemSlug) return true;
+
+      // Grouping aliases (handles "Flower Boxes", "Flower Bouquet", "Gift Box", etc.)
       if (
-        selectedCategory === "Flower Boxes" &&
-        (item.category === "Flower Bouquet" ||
-          item.category === "Gift Box" ||
-          item.category === "Flower Boxes")
-      )
+        (sel.includes("flower") || sel.includes("bouquet")) &&
+        (itemCat.includes("flower") || itemCat.includes("bouquet"))
+      ) {
         return true;
+      }
+      if (sel.includes("hamper") && itemCat.includes("hamper")) return true;
+      if (sel.includes("box") && itemCat.includes("box")) return true;
       if (
-        selectedCategory === "Gift Hampers" &&
-        (item.category === "Gift Hamper" || item.category === "Gift Hampers")
-      )
+        (sel.includes("personalized") || sel.includes("custom")) &&
+        (itemCat.includes("personalized") || itemCat.includes("custom"))
+      ) {
         return true;
+      }
       if (
-        selectedCategory === "Personalized Gifts" &&
-        (item.category === "Personalized Gifts" ||
-          item.category === "Custom Order")
-      )
+        (sel.includes("decor") || sel.includes("wrap")) &&
+        (itemCat.includes("decor") || itemCat.includes("wrap"))
+      ) {
         return true;
-      if (
-        selectedCategory === "Home & Decor" &&
-        (item.category === "Home & Decor" || item.category === "Gift Wrap")
-      )
-        return true;
-      if (
-        selectedCategory === "Sweet Treats" &&
-        item.category === "Sweet Treats"
-      )
-        return true;
+      }
+      if (sel.includes("sweet") && itemCat.includes("sweet")) return true;
+
       if (
         paramCategory &&
-        item.category.toLowerCase().replace(/\s+/g, "-") ===
-          paramCategory.toLowerCase().replace(/\s+/g, "-")
-      )
+        itemSlug === paramCategory.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+      ) {
         return true;
+      }
+
       return false;
     };
 
     let result = pool;
     if (selectedCategory !== "all") {
       const inCategory = pool.filter(matchesCategoryFunc);
-      // If user typed a search that has results in the chosen category, use them;
-      // if not, but pool has matches across other categories, show them so user finds what they searched!
       if (inCategory.length > 0 || !hasSearch) {
         result = inCategory;
       }
@@ -242,7 +346,7 @@ function CatalogContent() {
       });
     }
 
-    // 4. Sorting (if no search, or explicit sort chosen)
+    // 4. Sorting
     if (sortBy === "price-asc") {
       result = [...result].sort((a, b) => a.price - b.price);
     } else if (sortBy === "price-desc") {
@@ -252,31 +356,31 @@ function CatalogContent() {
     }
 
     return result;
-  }, [selectedCategory, selectedPriceRanges, searchQuery, sortBy, paramCategory]);
+  }, [liveProducts, selectedCategory, selectedPriceRanges, searchQuery, sortBy, paramCategory]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#1E1E1E] selection:bg-[#E10600]/15 selection:text-[#E10600]">
       {/* Solid Top Fixed Navbar */}
       <Navbar />
-      <BagDrawer />
+
 
       <main className="flex-1">
         {/* =========================================================================
-            CINEMATIC LUXURY FLORAL ATELIER COLLECTION HERO
+            CINEMATIC LUXURY FLORAL COLLECTION HERO
             High-fashion panoramic vista with pristine white marble workshop,
             dewy crimson roses, flowing satin ribbons, and crystal vases
             ========================================================================= */}
         {/* =========================================================================
-            CINEMATIC LUXURY FLORAL ATELIER COLLECTION HERO
-            Text moved to top over natural atelier wall, white box removed,
+            CINEMATIC LUXURY FLORAL COLLECTION HERO
+            Text moved to top over natural floral wall, white box removed,
             leaving roses, satin ribbons, and marble counter completely unobstructed
             ========================================================================= */}
         <section className="relative w-full h-[400px] sm:h-[460px] md:h-[500px] flex flex-col justify-between items-center pt-18 sm:pt-22 pb-4 border-b border-[#EFEAE2] overflow-hidden">
-          {/* Panoramic Cinematic Atelier Background */}
+          {/* Panoramic Cinematic Collection Background */}
           <div className="absolute inset-0 z-0 pointer-events-none">
             <Image
-              src="/images/collection-hero.jpg"
-              alt="Luxury Parisian floral atelier with crimson roses and satin ribbons on white marble"
+              src="https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881719/happiwrapz/assets/collection-hero.jpg"
+              alt="Luxury floral studio with crimson roses and satin ribbons on white marble"
               fill
               priority
               sizes="100vw"
@@ -294,7 +398,7 @@ function CatalogContent() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 border border-[#E10600]/25 shadow-2xs backdrop-blur-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-[#E10600] animate-pulse" />
               <span className="text-[10px] font-serif font-semibold tracking-[0.25em] uppercase text-[#E10600]">
-                Happiwrapz Atelier Archive
+                Happiwrapz Archive
               </span>
             </div>
 
@@ -305,7 +409,7 @@ function CatalogContent() {
 
             {/* Poetic Narrative */}
             <p className="text-xs sm:text-sm font-sans text-[#4A4A4A] max-w-lg mx-auto leading-relaxed">
-              Handcrafted satin ribbon roses, eternal sunflowers that never wilt, and signature European hand-tied wraps. Handcrafted in Bangalore with zero upfront online payment.
+              Handcrafted satin ribbon roses, eternal sunflowers that never wilt, and signature European hand-tied wraps. Handcrafted in Coimbatore with zero upfront online payment.
             </p>
 
             {/* Minimalist Trust Badges */}
@@ -663,7 +767,7 @@ function CatalogContent() {
 
                     <button
                       type="button"
-                      onClick={handleAddCustomOrderToBag}
+                      onClick={(e) => handleAddCustomOrderToBag(e)}
                       className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#E10600] hover:bg-[#C20500] text-white rounded-full text-xs font-serif uppercase tracking-wider font-semibold shadow-xs transition-all cursor-pointer"
                     >
                       <span>Add to Bag & Order</span>
@@ -734,24 +838,41 @@ function CatalogContent() {
               return (
                 <div
                   key={product.id}
-                  className={`group bg-white rounded-2xl sm:rounded-3xl border p-2.5 sm:p-3.5 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between ${isCustomOrder
-                    ? "border-[#E10600]/40 ring-1 ring-[#E10600]/20"
-                    : "border-[#EFEAE2] hover:border-[#E10600]/40"
-                    }`}
+                  className={`group bg-white rounded-2xl sm:rounded-3xl border p-2.5 sm:p-3.5 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between ${
+                    isAdded
+                      ? "border-[#E10600] product-pick-pulse ring-2 ring-[#E10600]/30 shadow-lg scale-[1.01]"
+                      : isCustomOrder
+                      ? "border-[#E10600]/40 ring-1 ring-[#E10600]/20"
+                      : "border-[#EFEAE2] hover:border-[#E10600]/40"
+                  }`}
                 >
                   <div>
                     {/* Image Preview Container */}
                     <Link
-                      href={`/product/${product.slug}`}
+                      href={`/product/${product.slug || product.id}`}
                       className="block relative w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-[#FAF8F5] mb-2 sm:mb-3"
                     >
                       <Image
-                        src={product.images[0]}
+                        src={buildCloudinaryUrl(
+                          product.images?.[0] || "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881756/happiwrapz/products/rose-bouquet-1.jpg",
+                          { preset: "card" }
+                        )}
                         alt={product.name}
                         fill
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="object-contain p-2 group-hover:scale-105 transition-transform duration-500 ease-out"
+                        className={`object-contain p-2 transition-all duration-500 ease-out ${
+                          product.images?.[1] ? "group-hover:opacity-0 group-hover:scale-95" : "group-hover:scale-105"
+                        }`}
                       />
+                      {product.images?.[1] && (
+                        <Image
+                          src={buildCloudinaryUrl(product.images[1], { preset: "card" })}
+                          alt={`${product.name} alternate angle`}
+                          fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          className="object-contain p-2 opacity-0 scale-105 group-hover:opacity-100 group-hover:scale-100 transition-all duration-500 ease-out"
+                        />
+                      )}
 
                       {/* Badge matching screenshot (Bestseller / Popular) */}
                       <span
@@ -783,7 +904,7 @@ function CatalogContent() {
                     <div className="px-0.5 sm:px-1 space-y-1">
                       {/* Product Title */}
                       <Link
-                        href={`/product/${product.slug}`}
+                        href={`/product/${product.slug || product.id}`}
                         className="block font-serif text-xs sm:text-base font-semibold text-[#1E1E1E] group-hover:text-[#E10600] transition-colors line-clamp-1"
                       >
                         {product.name}

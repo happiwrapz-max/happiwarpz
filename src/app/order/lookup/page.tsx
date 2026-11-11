@@ -9,6 +9,7 @@ import { useOrderStore } from "@/lib/store/useOrderStore";
 import { OrderRequest } from "@/lib/store/types";
 import { formatPrice, formatDate, formatDateTime, ORDER_STATUSES } from "@/lib/utils";
 import { Search, PackageCheck, Clock, MapPin, Phone, AlertCircle, ArrowRight, MessageSquare, CheckCircle2 } from "lucide-react";
+import CourierTrackerCard from "@/components/order/CourierTrackerCard";
 
 function LookupContent() {
   const searchParams = useSearchParams();
@@ -68,7 +69,7 @@ function LookupContent() {
         </h1>
         <p className="text-xs sm:text-sm font-sans text-[#666] mt-2">
           Enter your reference code (e.g.,{" "}
-          <strong className="text-[#E10600] font-mono">HW-A3K7P9</strong>) to view real-time atelier progress.
+          <strong className="text-[#E10600] font-mono">HW-A3K7P9</strong>) to view real-time order progress.
         </p>
       </div>
 
@@ -158,6 +159,9 @@ function LookupContent() {
                 </div>
               </div>
 
+              {/* Third-Party Courier Tracking Module */}
+              <CourierTrackerCard order={searchedOrder} />
+
               {/* Items List */}
               <div>
                 <h3 className="font-serif text-sm font-semibold text-[#1E1E1E] uppercase tracking-wider mb-3">
@@ -187,7 +191,7 @@ function LookupContent() {
               {/* WhatsApp Support Action */}
               <div className="text-center pt-2">
                 <a
-                  href={`https://wa.me/919876543210?text=Hello%20Happiwrapz!%20Checking%20status%20for%20order%20${searchedOrder.reference}`}
+                  href={`https://wa.me/917708354636?text=Hello%20Happiwrapz!%20Checking%20status%20for%20order%20${searchedOrder.reference}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1EBE5D] text-white px-7 py-3 rounded-full text-xs font-serif uppercase tracking-wider font-semibold transition-all shadow-xs"
@@ -204,7 +208,7 @@ function LookupContent() {
                 No matching order request found
               </h2>
               <p className="text-xs text-[#666] leading-relaxed mb-4">
-                Please verify your reference code (e.g. HW-A3K7P9) or connect directly with our atelier concierge.
+                Please verify your reference code (e.g. HW-A3K7P9) or connect directly with our concierge.
               </p>
               <Link
                 href="/catalog"

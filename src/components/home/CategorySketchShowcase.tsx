@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { RibbonEmblem } from "@/components/ui/RibbonEmblem";
+import { buildCloudinaryUrl } from "@/lib/cloudinary";
 
 interface OccasionItem {
   id: string;
@@ -24,7 +25,7 @@ const OCCASIONS: OccasionItem[] = [
     subtitle: "Eternal Crimson Roses",
     curation: "Forever blooms that never wilt",
     href: "/catalog?q=rose",
-    image: "/images/products/rose-bouquet-1.jpg",
+    image: "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881756/happiwrapz/products/rose-bouquet-1.jpg",
   },
   {
     id: "birthdays",
@@ -33,7 +34,7 @@ const OCCASIONS: OccasionItem[] = [
     subtitle: "Golden Ribbon Sunflowers",
     curation: "Radiant warmth & everlasting joy",
     href: "/catalog?q=sunflower",
-    image: "/images/products/midnight-box-1.jpg",
+    image: "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881749/happiwrapz/products/midnight-box-1.jpg",
   },
   {
     id: "weddings",
@@ -42,7 +43,7 @@ const OCCASIONS: OccasionItem[] = [
     subtitle: "Signature Keepsake Duets",
     curation: "Glitter luxury & bespoke presentation",
     href: "/catalog?category=Flower+Bouquet",
-    image: "/images/products/glitter-rose-1.jpg",
+    image: "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881737/happiwrapz/products/glitter-rose-1.jpg",
   },
   {
     id: "hampers",
@@ -51,7 +52,7 @@ const OCCASIONS: OccasionItem[] = [
     subtitle: "Grand Curated Trunks",
     curation: "Chocolates, fairy lights & satin ribbon",
     href: "/catalog?category=Gift+Hamper",
-    image: "/images/products/hamper-1.jpg",
+    image: "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881743/happiwrapz/products/hamper-1.jpg",
   },
 ];
 
@@ -90,7 +91,7 @@ export default function CategorySketchShowcase() {
               <div className="relative mb-3 flex flex-col items-center">
                 <div className="relative w-28 h-28 sm:w-36 sm:h-36 lg:w-44 lg:h-44 rounded-full overflow-hidden border-2 border-[#EFEAE2] group-hover:border-[#E10600] group-hover:shadow-[0_16px_36px_rgba(225,6,0,0.18)] transition-all duration-500 bg-[#FAF8F5]">
                   <Image
-                    src={item.image}
+                    src={buildCloudinaryUrl(item.image, { preset: "card" })}
                     alt={item.title}
                     fill
                     sizes="(max-width: 640px) 120px, (max-width: 1024px) 160px, 180px"

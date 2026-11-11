@@ -124,7 +124,7 @@ export default function AdminOrdersQueuePage() {
             Customer Orders Management
           </h1>
           <p className="text-xs text-[#666666] mt-0.5">
-            Review incoming requests, manage WhatsApp confirmations, and schedule Bangalore delivery runs.
+            Review incoming requests, manage WhatsApp confirmations, and schedule Coimbatore delivery runs.
           </p>
         </div>
 
@@ -277,12 +277,19 @@ export default function AdminOrdersQueuePage() {
                 </div>
 
                 {/* Items summary */}
-                <div className="text-[11px] text-[#666] bg-[#FAF8F5] p-2 rounded-xl">
+                <div className="text-[11px] text-[#666] bg-[#FAF8F5] p-2 rounded-xl space-y-1">
                   {order.items?.map((item, idx) => (
                     <div key={idx} className="truncate">
                       {item.quantity}x {item.product?.name}
                     </div>
                   ))}
+                  {order.trackingNumber && (
+                    <div className="pt-1 border-t border-[#EFEAE2] flex items-center gap-1.5 text-[10px] font-mono text-[#1A1A1A]">
+                      <span>🚚</span>
+                      <span className="font-semibold">{order.courierName || "Courier"}:</span>
+                      <span className="text-[#E10600] font-bold">{order.trackingNumber}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Mobile action bar */}
@@ -443,6 +450,13 @@ export default function AdminOrdersQueuePage() {
                         >
                           {order.status}
                         </span>
+                        {order.trackingNumber && (
+                          <div className="mt-1 flex items-center gap-1 text-[10px] font-mono text-[#4A4A4A] bg-[#FAF8F5] px-1.5 py-0.5 rounded border border-[#EFEAE2] w-fit">
+                            <span>🚚</span>
+                            <span className="font-semibold text-[#1A1A1A]">{order.courierName || "Courier"}:</span>
+                            <span className="truncate max-w-[90px]">{order.trackingNumber}</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Quick Actions */}

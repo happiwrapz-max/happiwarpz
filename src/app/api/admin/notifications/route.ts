@@ -1,43 +1,43 @@
-import { NextResponse } from "next/server";
-import {
-  getNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-} from "@/lib/server/db";
+import { NextRequest, NextResponse } from "next/server";
+import { getNotifications, markNotificationAsRead } from "@/lib/server/db";
+import { requireAdmin } from "@/lib/server/security";
+import { handleApiError } from "@/lib/server/errors";
+import { sanitizeString } from "@/lib/server/sanitize";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const adminCheck = requireAdmin(request);
+  if ("errorResponse" in adminCheck) {
+    return adminCheck.errorResponse;
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
-    const unreadOnly = searchParams.get("unread") === "true";
-
-    const notifications = await getNotifications(unreadOnly);
-    return NextResponse.json({ success: true, notifications });
+    const notifications = await getNotifications();
+    return NextResponse.json({
+      success: true,
+      count: notifications.length,
+      notifications,
+    });
   } catch (err: any) {
-    return NextResponse.json(
-      { success: false, error: err.message || "Failed to load notifications" },
-      { status: 500 }
-    );
+    return handleApiError(err, "Failed to fetch notifications");
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
+  const adminCheck = requireAdmin(request);
+  if ("errorResponse" in adminCheck) {
+    return adminCheck.errorResponse;
+  }
+
   try {
     const body = await request.json();
-    if (body.all) {
-      await markAllNotificationsAsRead();
-      return NextResponse.json({ success: true });
+    if (!body.id) {
+      return NextResponse.json({ success: false, error: "Notification ID is required" }, { status: 400 });
     }
 
-    if (body.id) {
-      const ok = await markNotificationAsRead(body.id);
-      return NextResponse.json({ success: ok });
-    }
-
-    return NextResponse.json({ success: false, error: "Missing notification id" }, { status: 400 });
+    const cleanId = sanitizeString(body.id, 64);
+    const updated = await markNotificationAsRead(cleanId);
+    return NextResponse.json({ success: true, updated });
   } catch (err: any) {
-    return NextResponse.json(
-      { success: false, error: err.message || "Failed to update notification" },
-      { status: 500 }
-    );
+    return handleApiError(err, "Failed to update notification");
   }
 }

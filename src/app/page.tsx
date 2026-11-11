@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import BagDrawer from "@/components/bag/BagDrawer";
+
 import { CATALOG } from "@/lib/data/catalog";
 import { useBagStore } from "@/lib/store/useBagStore";
 import AccordionApp, { AccordionItemData } from "@/components/watermelon/card-split-accordian";
@@ -28,10 +28,24 @@ import {
   ChevronRight
 } from "lucide-react";
 import { RibbonEmblem } from "@/components/ui/RibbonEmblem";
+import { buildCloudinaryUrl } from "@/lib/cloudinary";
 
 
 
 
+
+interface ContentSettings {
+  announcement?: string;
+  announcementActive?: boolean;
+  announcementLink?: string;
+  heroHeading?: string;
+  heroSubheading?: string;
+  heroButtonText?: string;
+  heroButtonLink?: string;
+  heroDesktopImage?: string;
+  heroMobileImage?: string;
+  aboutImage?: string;
+}
 
 const FAQ_ITEMS: AccordionItemData[] = [
   {
@@ -66,133 +80,222 @@ const FAQ_ITEMS: AccordionItemData[] = [
 
 export default function HomePage() {
   const openDrawer = useBagStore((s) => s.openDrawer);
+  const [products, setProducts] = useState(CATALOG);
+  const [content, setContent] = useState<ContentSettings>({
+    announcement: "🎀 Handcrafted with love — Order requests open for Coimbatore & pan-India delivery",
+    announcementActive: true,
+    announcementLink: "/catalog",
+    heroHeading: "The Moments Deserve Flowers.",
+    heroSubheading:
+      "Handcrafted satin ribbon roses, golden sunflowers that never wilt, and signature European hand-tied wraps in Coimbatore with zero upfront payment.",
+    heroButtonText: "Explore Collection",
+    heroButtonLink: "/catalog",
+    heroDesktopImage:
+      "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793977633/happiwrapz/products/yajzmq3oy9mbcvb8muqj.jpg",
+    heroMobileImage:
+      "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793882678/happiwrapz/assets/hero-mobile-luxury.jpg",
+    aboutImage:
+      "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881756/happiwrapz/products/rose-bouquet-1.jpg",
+  });
+
+  useEffect(() => {
+    fetch("/api/content?t=" + Date.now(), { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          setContent((prev) => ({ ...prev, ...data.settings }));
+        }
+      })
+      .catch((err) => console.error("Error fetching storefront content:", err));
+
+    fetch("/api/products?t=" + Date.now(), { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+          setProducts(data.products);
+        }
+      })
+      .catch((err) => console.error("Error fetching live products for homepage:", err));
+  }, []);
+
+  const renderHeading = (heading: string, isMobile = false) => {
+    const parts = (heading || "The Moments Deserve Flowers.").trim().split(" ");
+    if (parts.length <= 2) {
+      return (
+        <>
+          {parts[0]}{" "}
+          <span
+            className={`italic text-[#E10600] font-light ${
+              isMobile ? "block" : "sm:inline"
+            }`}
+          >
+            {parts.slice(1).join(" ")}
+          </span>
+        </>
+      );
+    }
+    const splitIndex = Math.max(1, parts.length - 2);
+    const firstPart = parts.slice(0, splitIndex).join(" ");
+    const secondPart = parts.slice(splitIndex).join(" ");
+    return (
+      <>
+        {firstPart}{" "}
+        <span
+          className={`italic text-[#E10600] font-light ${
+            isMobile ? "block" : "sm:inline"
+          }`}
+        >
+          {secondPart}
+        </span>
+      </>
+    );
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#1E1E1E] selection:bg-[#E10600]/15 selection:text-[#E10600] overflow-x-hidden">
       <Navbar />
-      <BagDrawer />
 
       <main className="flex-1">
+        {/* Top Atelier Announcement Ribbon if active */}
+        {content.announcementActive && content.announcement && (
+          <div className="bg-[#1A1A1A] text-[#FAF8F5] text-[11px] sm:text-xs py-2 px-4 text-center tracking-wider font-sans flex items-center justify-center gap-2 border-b border-black/20">
+            <span>{content.announcement}</span>
+            {content.announcementLink && (
+              <Link
+                href={content.announcementLink}
+                className="underline text-[#FFE082] hover:text-white font-medium ml-1 transition-colors"
+              >
+                Learn more →
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* =========================================================================
-            MOBILE HERO SECTION (Dedicated View for Mobile Screens < 768px)
-            Featuring the new vertical roses & pearls image with crisp top text
-            ========================================================================= */}
-        {/* =========================================================================
-            MOBILE HERO SECTION (Dedicated View for Mobile Screens < 768px)
-            Featuring the vertical roses & pearls image as full-screen background
-            with pure white top under the fixed transparent navbar
+            MOBILE HERO SECTION (Dedicated Fullscreen View for Mobile Screens < 768px)
+            Featuring the luxury vertical roses, dew drops & pearls portrait artwork
             ========================================================================= */}
         <section className="md:hidden relative w-full min-h-[100dvh] flex flex-col justify-between bg-white overflow-hidden border-b border-[#EFEAE2]">
-          {/* Fullscreen Mobile Hero Background Image anchored to bottom */}
+          {/* Fullscreen Mobile Hero Background Image anchored naturally to bottom */}
           <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
             <Image
-              src="/images/hero-mobile.jpg"
-              alt="Handcrafted satin ribbon flowers and luxury gift hampers"
+              src={buildCloudinaryUrl(
+                content.heroMobileImage ||
+                "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793882678/happiwrapz/assets/hero-mobile-luxury.jpg",
+                { preset: "hero-mobile" }
+              )}
+              alt="Handcrafted satin ribbon roses, water droplets and luxury pearls"
               fill
               priority
+              unoptimized
               sizes="100vw"
               className="object-cover object-bottom"
             />
-            {/* Subtle soft white gradient at very top to guarantee 100% navbar & text legibility */}
-            <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-white via-white/85 to-transparent pointer-events-none" />
+            {/* Soft white gradient at top to guarantee 100% legibility */}
+            <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-white via-white/85 to-transparent pointer-events-none" />
           </div>
 
-          {/* Top Text Content Frame (Left-aligned in the pure white canvas area) */}
-          <div className="relative z-10 pt-20 px-4 sm:px-6 space-y-3.5 max-w-sm">
-            {/* Headline - strictly left aligned */}
-            <h1 className="font-serif font-normal text-[38px] leading-[1.02] tracking-[-0.01em] text-[#1E1E1E]">
-              The Moments{" "}
-              <span className="italic text-[#E10600] font-light block">
-                Deserve Flowers.
-              </span>
+          {/* Top Text Content Frame (Clean luxury layout on pure white canvas) */}
+          <div className="relative z-10 pt-24 px-5 space-y-3.5 max-w-sm">
+            {/* Headline */}
+            <h1 className="font-serif font-normal text-[38px] leading-[1.02] tracking-[-0.01em] text-[#1A1A1A]">
+              {renderHeading(content.heroHeading || "The Moments Deserve Flowers.", true)}
             </h1>
 
             {/* Subtitle */}
             <p className="text-xs font-sans text-[#5A5A5A] leading-relaxed max-w-[280px]">
-              Handcrafted satin ribbon roses, golden sunflowers, and forever keepsake gift hampers.
+              {content.heroSubheading ||
+                "Handcrafted satin ribbon roses, golden sunflowers that never wilt, and signature European hand-tied wraps in Coimbatore with zero upfront payment."}
             </p>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2.5 pt-1">
               <Link
-                href="/catalog"
-                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[#E10600] hover:bg-[#C20500] text-white py-3 rounded-full text-xs font-serif font-semibold uppercase tracking-[0.14em] shadow-[0_4px_16px_rgba(225,6,0,0.3)] transition-all"
+                href={content.heroButtonLink || "/catalog"}
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-[#E10600] hover:bg-[#C20500] text-white py-3.5 rounded-full text-xs font-serif font-semibold uppercase tracking-[0.14em] shadow-[0_6px_20px_rgba(225,6,0,0.32)] transition-all"
               >
-                <span>Shop Bouquets</span>
+                <span>{content.heroButtonText || "Shop Bouquets"}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
 
               <button
                 onClick={openDrawer}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-white/95 hover:bg-white text-[#1E1E1E] border border-[#EFEAE2] py-3 rounded-full text-xs font-serif font-medium uppercase tracking-[0.12em] shadow-xs transition-all cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-white/95 hover:bg-white text-[#1A1A1A] border border-[#EFEAE2] py-3.5 rounded-full text-xs font-serif font-medium uppercase tracking-[0.12em] shadow-xs transition-all cursor-pointer"
               >
                 <Calendar className="w-3.5 h-3.5 text-[#E10600]" />
                 <span>Order Process</span>
               </button>
             </div>
 
-            {/* Quick Micro Trust Chips */}
+            {/* Micro Trust Chips */}
             <div className="flex flex-wrap items-center gap-2 text-[10px] text-[#666] pt-1">
-              <span className="text-[#059669] font-medium">✓ 100% Handcrafted Ribbon</span>
+              <span className="text-[#059669] font-medium">✓ 100% Handcrafted</span>
               <span>•</span>
-              <span className="text-[#059669] font-medium">✓ Never Wilts</span>
+              <span className="text-[#059669] font-medium">✓ Zero Upfront Payment</span>
               <span>•</span>
               <span className="text-[#059669] font-medium">✓ WhatsApp Direct</span>
             </div>
           </div>
 
-          {/* Bottom frame spacer to ensure roses and pearls remain visible and undisturbed */}
-          <div className="relative z-10 h-44 sm:h-52 pointer-events-none" />
+          {/* Bottom spacer ensuring roses and pearls are never blocked */}
+          <div className="relative z-10 h-52 sm:h-64 pointer-events-none" />
         </section>
 
         {/* =========================================================================
-            DESKTOP & LAPTOP HERO SECTION (Screens >= 768px)
-            Unblurred, unzoomed actual image with left-aligned typography
+            DESKTOP HERO SECTION (Screens >= 768px)
+            Full screen luxury layout with pure white seamless canvas & velvet roses
             ========================================================================= */}
-        <section className="hidden md:flex relative w-full min-h-[90vh] lg:h-screen items-center bg-white overflow-hidden pt-24 pb-12 sm:pt-28 sm:pb-16 lg:py-0 border-b border-[#EFEAE2]">
-          {/* Desktop Hero Image: Natural scale, unblurred, anchored right */}
-          <div className="absolute inset-y-0 right-0 w-full lg:w-[62%] xl:w-[58%] pointer-events-none">
+        <section className="hidden md:flex relative w-full min-h-[100dvh] lg:h-screen items-center bg-white overflow-hidden pt-20 border-b border-[#EFEAE2]">
+          {/* Desktop Hero Image: Natural scale, unblurred, anchored right with zero seam */}
+          <div className="absolute inset-y-0 right-0 w-full md:w-[60%] lg:w-[64%] xl:w-[68%] h-full pointer-events-none select-none z-0">
             <Image
-              src="/images/hero-desktop.jpg"
-              alt="Handcrafted satin ribbon flower and luxury gifts"
+              src={buildCloudinaryUrl(
+                content.heroDesktopImage ||
+                "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793977633/happiwrapz/products/yajzmq3oy9mbcvb8muqj.jpg",
+                { preset: "hero-desktop" }
+              )}
+              alt="Handcrafted satin ribbon luxury flowers, water drops and pearls"
               fill
               priority
-              sizes="(max-width: 1024px) 100vw, 60vw"
-              className="object-contain lg:object-cover object-right"
+              unoptimized
+              sizes="100vw"
+              className="object-contain lg:object-cover object-right-bottom"
             />
+            {/* Subtle soft white blend gradient on the left edge */}
+            <div className="absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-white via-white/40 to-transparent pointer-events-none" />
           </div>
 
           {/* Left-Aligned Text Content Frame */}
-          <div className="container-main relative z-10 w-full px-4 sm:px-6">
+          <div className="container-main relative z-10 w-full px-6 lg:px-12">
             <div className="max-w-xl lg:max-w-2xl text-left space-y-6">
               {/* Main Headline */}
-              <h1 className="font-serif font-normal text-5xl sm:text-6xl md:text-7xl lg:text-[76px] xl:text-[84px] leading-[1.02] tracking-[-0.01em] text-[#1E1E1E]">
-                The Moments{" "}
-                <span className="italic text-[#E10600] block sm:inline font-light">
-                  Deserve Flowers.
-                </span>
+              <h1 className="font-serif font-normal text-5xl sm:text-6xl md:text-7xl lg:text-[76px] xl:text-[86px] leading-[1.0] tracking-[-0.02em] text-[#1A1A1A]">
+                {renderHeading(content.heroHeading || "The Moments Deserve Flowers.")}
               </h1>
 
               {/* Editorial Subtitle */}
               <p className="text-sm sm:text-base font-sans text-[#5A5A5A] leading-relaxed max-w-lg">
-                Handcrafted satin ribbon roses & golden sunflowers that never wilt, luxury wrap, and bespoke gift hampers in Bangalore.
+                {content.heroSubheading ||
+                  "Handcrafted satin ribbon roses, golden sunflowers that never wilt, and signature European hand-tied wraps in Coimbatore with zero upfront payment."}
               </p>
 
-              {/* Action Buttons */}
+              {/* Action Buttons: Button-in-Button Trailing Icon Architecture */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
                 <Link
-                  href="/catalog"
-                  className="inline-flex items-center justify-center gap-3 bg-[#E10600] hover:bg-[#C20500] text-white px-8 py-4 rounded-full text-xs font-serif font-semibold uppercase tracking-[0.16em] shadow-[0_6px_22px_rgba(225,6,0,0.3)] hover:shadow-[0_10px_30px_rgba(225,6,0,0.4)] transition-all duration-300"
+                  href={content.heroButtonLink || "/catalog"}
+                  className="group inline-flex items-center gap-4 bg-[#E10600] hover:bg-[#C20500] text-white pl-8 pr-3 py-3.5 rounded-full text-xs font-serif font-semibold uppercase tracking-[0.16em] shadow-[0_8px_25px_rgba(225,6,0,0.35)] hover:shadow-[0_12px_32px_rgba(225,6,0,0.45)] transition-all duration-300"
                 >
-                  <span>Explore Collection</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>{content.heroButtonText || "Explore Collection"}</span>
+                  <span className="w-8 h-8 rounded-full bg-white/20 group-hover:bg-white group-hover:text-[#E10600] text-white flex items-center justify-center transition-all duration-300">
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </span>
                 </Link>
 
                 <button
                   onClick={openDrawer}
-                  className="inline-flex items-center justify-center gap-2 bg-[#FAF8F5] hover:bg-[#F2ECE4] text-[#1E1E1E] border border-[#EFEAE2] px-7 py-4 rounded-full text-xs font-serif font-medium uppercase tracking-[0.14em] transition-all cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2.5 bg-[#FAF7F2] hover:bg-[#F2ECE4] text-[#1A1A1A] border border-[#EFEAE2] px-7 py-4 rounded-full text-xs font-serif font-medium uppercase tracking-[0.14em] transition-all cursor-pointer shadow-xs"
                 >
-                  <Calendar className="w-3.5 h-3.5 text-[#E10600]" />
+                  <Calendar className="w-4 h-4 text-[#E10600]" />
                   <span>Order Procedure</span>
                 </button>
               </div>
@@ -200,16 +303,16 @@ export default function HomePage() {
               {/* Trust Badges Bar */}
               <div className="pt-6 border-t border-[#EFEAE2] flex flex-wrap items-center gap-6 text-xs text-[#666]">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#E10600]" />
-                  <span>100% Handcrafted Ribbon Flowers</span>
+                  <CheckCircle2 className="w-4 h-4 text-[#059669]" />
+                  <span className="font-medium text-[#1A1A1A]">100% Handcrafted Ribbon Flowers</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#E10600]" />
-                  <span>Zero Online Payment Upfront</span>
+                  <CheckCircle2 className="w-4 h-4 text-[#059669]" />
+                  <span className="font-medium text-[#1A1A1A]">Zero Online Payment Upfront</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#E10600]" />
-                  <span>WhatsApp Concierge Direct</span>
+                  <CheckCircle2 className="w-4 h-4 text-[#059669]" />
+                  <span className="font-medium text-[#1A1A1A]">WhatsApp Concierge Direct</span>
                 </div>
               </div>
             </div>
@@ -249,14 +352,14 @@ export default function HomePage() {
         {/* =========================================================================
             NEW ARRIVALS SECTION (Infinite Auto-Scrolling Carousel & Quick Discovery)
             ========================================================================= */}
-        <NewArrivals products={CATALOG} />
+        <NewArrivals products={products} />
 
 
 
         {/* =========================================================================
-            ABOUT ATELIER SECTION (Philosophy, Provenance Pillars & Concierge Story)
+            ABOUT SECTION (Philosophy, Provenance Pillars & Concierge Story)
             ========================================================================= */}
-        <AboutSection />
+        <AboutSection imageSrc={content.aboutImage} />
 
         {/* =========================================================================
             FAQ ACCORDION SECTION

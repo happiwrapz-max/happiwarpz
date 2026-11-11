@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { buildCloudinaryUrl } from "@/lib/cloudinary";
 
-export default function AboutSection() {
+export default function AboutSection({ imageSrc }: { imageSrc?: string }) {
   return (
     <section id="about" className="py-16 sm:py-24 bg-white border-b border-[#EFEAE2] overflow-hidden">
       <div className="container-main px-4 sm:px-6">
@@ -13,8 +14,11 @@ export default function AboutSection() {
           <div className="lg:col-span-5 relative">
             <div className="relative w-full aspect-[4/5] rounded-3xl overflow-hidden border border-[#EFEAE2] shadow-xs bg-[#FAF8F5]">
               <Image
-                src="/images/collection-hero.jpg"
-                alt="Happiwrapz Artisanal Floral Atelier in Bangalore"
+                src={buildCloudinaryUrl(
+                  imageSrc || "https://res.cloudinary.com/w8fw2mbb/image/upload/v1793881719/happiwrapz/assets/collection-hero.jpg",
+                  { preset: "detail" }
+                )}
+                alt="Happiwrapz Floral Studio in Coimbatore, Tamil Nadu, India"
                 fill
                 sizes="(max-width: 1024px) 100vw, 42vw"
                 className="object-cover object-center"

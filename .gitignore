@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local backups, uploads & generated analysis
+/.data/backups/
+/public/uploads/
+/graphify-out/
+/src/graphify-out/

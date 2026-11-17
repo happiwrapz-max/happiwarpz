@@ -14,7 +14,6 @@ import {
   Phone,
   MessageSquare,
   ShieldCheck,
-  Calendar,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useBagStore } from "@/lib/store/useBagStore";
@@ -77,9 +76,6 @@ export default function Navbar({ darkHero = false }: { darkHero?: boolean }) {
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "Collection", href: "/catalog" },
-    { label: "Custom Orders", href: "/catalog?category=Custom+Order" },
-    { label: "Track Order", href: "/order/lookup" },
-    { label: "Our Story", href: "/about" },
   ];
 
   return (
@@ -441,10 +437,6 @@ export default function Navbar({ darkHero = false }: { darkHero?: boolean }) {
 
               {/* Main Navigation Links */}
               <nav className="p-4 space-y-1 font-serif">
-                <span className="text-[10px] uppercase font-semibold text-[#888] tracking-[0.2em] px-3 block mb-2">
-                  Navigation
-                </span>
-
                 {navLinks.map((link) => (
                   <Link
                     key={link.label}
@@ -506,52 +498,6 @@ export default function Navbar({ darkHero = false }: { darkHero?: boolean }) {
                 )}
               </nav>
 
-              {/* Curated Categories */}
-              <div className="p-4 pt-2 border-t border-[#EFEAE2]">
-                <span className="text-[10px] uppercase font-serif font-semibold text-[#888] tracking-[0.2em] px-3 block mb-2">
-                  Atelier Categories
-                </span>
-                <div className="grid grid-cols-2 gap-2 text-xs font-serif">
-                  <Link
-                    href="/catalog?category=Flower+Bouquet"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#EFEAE2] hover:border-[#E10600]/40 transition-all text-[#1E1E1E] hover:text-[#E10600] block"
-                  >
-                    🌹 Ribbon Flowers
-                  </Link>
-                  <Link
-                    href="/catalog?category=Gift+Box"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#EFEAE2] hover:border-[#E10600]/40 transition-all text-[#1E1E1E] hover:text-[#E10600] block"
-                  >
-                    📦 Gift Boxes
-                  </Link>
-                  <Link
-                    href="/catalog?category=Gift+Hamper"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#EFEAE2] hover:border-[#E10600]/40 transition-all text-[#1E1E1E] hover:text-[#E10600] block"
-                  >
-                    🎁 Hampers
-                  </Link>
-                  <Link
-                    href="/catalog?category=Gift+Wrap"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#EFEAE2] hover:border-[#E10600]/40 transition-all text-[#1E1E1E] hover:text-[#E10600] block"
-                  >
-                    🎀 Gift Wraps
-                  </Link>
-                  <Link
-                    href="/catalog?category=Custom+Order"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="col-span-2 p-2.5 rounded-xl bg-[#E10600]/[0.06] border border-[#E10600]/25 hover:bg-[#E10600]/10 transition-all text-[#E10600] font-semibold flex items-center justify-between"
-                  >
-                    <span>🎀 Bespoke Custom Orders</span>
-                    <span className="text-[10px] bg-[#E10600] text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
-                      New Studio
-                    </span>
-                  </Link>
-                </div>
-              </div>
             </div>
 
             {/* Menu Footer with Concierge Contact */}

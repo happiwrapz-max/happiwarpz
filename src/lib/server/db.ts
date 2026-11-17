@@ -1841,7 +1841,12 @@ export async function updateUserPassword(
   actorName: string
 ): Promise<User | null> {
   const db = loadDatabase();
-  const user = db.users.find((u) => u.id === userId);
+  const localUser = db.users.find((u) => u.id === userId);
+  const user =
+    localUser ||
+    (isPostgresConfigured
+      ? (await pgGetUsers())?.find((candidate) => candidate.id === userId)
+      : undefined);
   if (!user) return null;
 
   user.passwordHash = hashPassword(newPassword);
@@ -1856,10 +1861,13 @@ export async function updateUserPassword(
     note: `Admin ${actorName} set/reset security password for staff ${user.email} (${user.name})`,
   });
 
-  saveDatabase(db);
   if (isPostgresConfigured) {
-    pgSaveUser(user).catch((e) => console.warn("[Postgres] update user password error:", e));
+    const saved = await pgSaveUser(user);
+    if (!saved) {
+      throw new Error("Failed to persist the updated password to PostgreSQL.");
+    }
   }
+  if (localUser) saveDatabase(db);
   return sanitizeUser(user);
 }
 
@@ -1880,6 +1888,12 @@ export async function createUser(data: {
       existing.hasPassword = true;
       existing.passwordUpdatedAt = new Date().toISOString();
       existing.passwordSetBy = data.actorName || "admin";
+      if (isPostgresConfigured) {
+        const saved = await pgSaveUser(existing);
+        if (!saved) {
+          throw new Error("Failed to persist the updated password to PostgreSQL.");
+        }
+      }
       saveDatabase(db);
     }
     return sanitizeUser(existing);
@@ -1901,10 +1915,13 @@ export async function createUser(data: {
   }
 
   db.users.push(newUser);
-  saveDatabase(db);
   if (isPostgresConfigured) {
-    pgSaveUser(newUser).catch((e) => console.warn("[Postgres] save user error:", e));
+    const saved = await pgSaveUser(newUser);
+    if (!saved) {
+      throw new Error("Failed to persist the new user to PostgreSQL.");
+    }
   }
+  saveDatabase(db);
   return sanitizeUser(newUser);
 }
 

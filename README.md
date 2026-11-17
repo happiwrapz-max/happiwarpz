@@ -38,3 +38,15 @@ The app root is the directory containing this `package.json`. If that directory 
 Add production environment variables in **Project Settings > Environment Variables** using current values from your service dashboards. Keep private keys and database credentials out of Git.
 
 See the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Reset an administrator password
+
+Deploy the current app version first so passwords are read from PostgreSQL. Then, from the app directory, link the Vercel project and pull its production environment variables into the ignored `.env.local` file:
+
+```bash
+vercel link
+vercel env pull .env.local --environment=production
+npm run admin:reset-password
+```
+
+The reset command asks for an administrator email, prompts twice for a new password without displaying it, and requires typing `RESET` before saving. Use a unique password with at least 12 characters. Never put passwords or database URLs in command arguments, source files, or chat.

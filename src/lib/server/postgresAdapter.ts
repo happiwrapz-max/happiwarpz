@@ -93,10 +93,12 @@ export async function ensurePostgresReady(initialData?: {
         for (const u of initialData.users) {
           await sql`
             INSERT INTO users (
-              id, name, email, role, avatar, created_at
+              id, name, email, role, avatar, created_at,
+              password_hash, password_updated_at, password_set_by
             ) VALUES (
               ${u.id}, ${u.name}, ${u.email}, ${u.role},
-              ${u.avatar || null}, ${u.createdAt || new Date().toISOString()}
+              ${u.avatar || null}, ${u.createdAt || new Date().toISOString()},
+              ${u.passwordHash || null}, ${u.passwordUpdatedAt || null}, ${u.passwordSetBy || null}
             ) ON CONFLICT (id) DO NOTHING
           `;
         }
@@ -507,7 +509,10 @@ export async function pgGetUsers(): Promise<User[] | null> {
     const rows = await sql`
       SELECT
         id, name, email, role, avatar,
-        created_at as "createdAt"
+        created_at as "createdAt",
+        password_hash as "passwordHash",
+        password_updated_at as "passwordUpdatedAt",
+        password_set_by as "passwordSetBy"
       FROM users
       ORDER BY created_at DESC
     `;
@@ -523,15 +528,20 @@ export async function pgSaveUser(u: User): Promise<boolean> {
   try {
     await sql`
       INSERT INTO users (
-        id, name, email, role, avatar, created_at
+        id, name, email, role, avatar, created_at,
+        password_hash, password_updated_at, password_set_by
       ) VALUES (
         ${u.id}, ${u.name}, ${u.email}, ${u.role},
-        ${u.avatar || null}, ${u.createdAt || new Date().toISOString()}
+        ${u.avatar || null}, ${u.createdAt || new Date().toISOString()},
+        ${u.passwordHash || null}, ${u.passwordUpdatedAt || null}, ${u.passwordSetBy || null}
       )
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         role = EXCLUDED.role,
-        avatar = EXCLUDED.avatar
+        avatar = EXCLUDED.avatar,
+        password_hash = COALESCE(EXCLUDED.password_hash, users.password_hash),
+        password_updated_at = COALESCE(EXCLUDED.password_updated_at, users.password_updated_at),
+        password_set_by = COALESCE(EXCLUDED.password_set_by, users.password_set_by)
     `;
     return true;
   } catch (err) {

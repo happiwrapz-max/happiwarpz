@@ -110,8 +110,15 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'customer',
   avatar TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  password_hash TEXT,
+  password_updated_at TIMESTAMPTZ,
+  password_set_by TEXT
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_updated_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_set_by TEXT;
 
 -- 7. Inventory movements table
 CREATE TABLE IF NOT EXISTS inventory_movements (

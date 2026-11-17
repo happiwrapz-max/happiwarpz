@@ -40,8 +40,17 @@ export async function POST(request: NextRequest) {
         user.name = name;
       }
 
-      // If user is staff and has a password configured by Admin, verify it strictly
-      if (isStaffRole(user.role) && user.passwordHash) {
+      if (isStaffRole(user.role)) {
+        if (!user.passwordHash) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                "Administrator password is not configured. Contact the Store Owner to reset it.",
+            },
+            { status: 401 }
+          );
+        }
         if (!providedPassword || !verifyPassword(providedPassword, user.passwordHash)) {
           return NextResponse.json(
             {

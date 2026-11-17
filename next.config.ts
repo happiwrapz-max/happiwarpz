@@ -16,6 +16,9 @@ const cspHeader = `
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
+  experimental: {
+    agentUpgrade: "security",
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
@@ -33,14 +36,6 @@ const nextConfig: NextConfig = {
         hostname: "firebasestorage.googleapis.com",
       },
     ],
-  },
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
   },
   async headers() {
     return [

@@ -31,6 +31,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Deploy this project with the [Vercel Platform](https://vercel.com/new) using the Next.js framework preset.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The app root is the directory containing this `package.json`. If that directory is nested inside the connected Git repository, set Vercel's **Root Directory** to the app directory. Keep the default install and build commands (`npm install` and `npm run build`) and the default Next.js output settings; this app is not a static export.
+
+Add production environment variables in **Project Settings > Environment Variables** using current values from your service dashboards. Keep private keys and database credentials out of Git.
+
+See the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

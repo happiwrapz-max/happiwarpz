@@ -378,7 +378,7 @@ export const redisCache = {
         keysCount = infoKeys.length;
         sampleKeys = infoKeys.slice(0, 10);
         provider = "upstash-redis";
-        endpoint = UPSTASH_URL.replace("https://", "");
+        endpoint = UPSTASH_URL?.replace("https://", "") ?? endpoint;
       } catch {
         // Fallback to memory values
       }
